@@ -28,18 +28,15 @@ library(dplyr)
 library(pwr)
 library(ggplot2)
 library(kableExtra)
-
-# library(data.table)
-# library(gtsummary)
-# library(paletteer)
-# library(magrittr)
-# library(lmerTest)
 ```
 
-## Hypothetical MOCA cluster randomized trial (CRT)
+# Hypothetical MOCA cluster randomized trial (CRT)
 Several interventions on the level of health care workers to reduce antibiotic prescriptions at health facilities
+
 Control: Standard of care
+
 Intervention 1: eHealth tool
+
 Intervention 2: eHealth tool + AMR stewardship clubs
 
 Important features and fixed parameters:
@@ -60,8 +57,8 @@ Design considerations:
 - Which pair-wise comparisons to power for?
 - Multiplicity?
 
-## Sample size calculations and simulations
-### First, just as a comparison, a simple individual randomized trial for the same question
+
+## First, just as a comparison, a simple individual randomized trial for the same question
 
 ```r
 # Parameters
@@ -133,9 +130,11 @@ cat("Total sample size (3-arm trial):", n_total)
 ## Total sample size (3-arm trial): 174
 ```
 A reduction of at least 25% percentage points is a Cohen's d of over 0.5 => medium to large effect.
+
 Adjust for multiplicity yes/no.
 
-### Now, move to a CRT design
+
+## Now, move to a CRT design
 
 Now, figure out the design effect for clustering to add to individual RCT sample size
 The usual: DEFF = 1 + (m − 1) x ICC, whereby m = cluster size
@@ -246,15 +245,18 @@ cat("Total sample size individuals:", tot_ind, "\n")
 ## Total sample size individuals: 2006.335
 ```
 With CV = 0 => 13 clusters per arm => 39 clusters in total with mean m=40 => ca. 1512 participants 
+
 With CV = 0.6 => 17 clusters per arm => 51 clusters in total with mean m=40 => ca. 2007 participants 
+
 With CV = 0.6 & bonferroni correction => 21 clusters per arm => 63 clusters in total with mean m=40 => ca. 2430 participants
+
 Cluster size increase to m=200 helps little as expected (reduce 2-3 clusters in total)
 
 
-#### Let's generate the data
+## Let's generate the data
 Using simstudy: https://kgoldfeld.github.io/simstudy/articles/simstudy.html
 
-##### Generate a three-arm trial directly
+### Generate a three-arm trial directly
 CAVE: It works, but for now only if I use 1 outcome model.
 
 ```r
@@ -339,7 +341,7 @@ CAVE: It works, but for now only if I use 1 outcome model.
 #   ggtitle("Proportion of Success by Treatment Group in Multi-Arm Cluster CRT")
 ```
 
-##### Generate a two-arm trial, based on primary and sample size determining contrast
+### Generate a two-arm trial, based on primary and sample size determining contrast
 That means max 26 clusters, the rest is the same
 
 ```r
@@ -452,17 +454,9 @@ ggplot(cluster_summary, aes(x = factor(site), y = cluster_size, fill = factor(rx
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```
-## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-## ℹ Please use `linewidth` instead.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-## generated.
-```
-
 ![](MOCA_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
 
-##### Let's estimate the effect size
+### Let's estimate the effect size
 
 ```r
 # Ensure treatment variable is a factor with "control" as reference
@@ -516,7 +510,7 @@ results_table %>%
 |Wald (model-based) |              -1.206|        0.3|         0.17|         0.54|<0.001  |
 |Cluster-robust SE  |              -1.206|        0.3|         0.17|         0.54|<0.001  |
 
-##### Let's confirm the power
+### Let's confirm the power
 
 ```r
 replicate_arm1_vs_control <- function() {
