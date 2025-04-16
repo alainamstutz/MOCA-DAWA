@@ -61,7 +61,6 @@ Design considerations:
 ## First, just as a comparison, a simple individual randomized trial for the same question
 ```{r, warning=FALSE}
 # Parameters
-alpha <- 0.05
 p_C <- 0.75 # control: Baseline prescription rate
 p_I1 <- 0.50 # int 1: 25pp reduction
 p_I2 <- 0.45 # int 2: 30pp reduction
@@ -74,7 +73,7 @@ h_I2_C <- ES.h(p1 = p_I2, p2 = p_C)
 
 cat("Cohen's h for I1 vs Control:", round(h_I1_C, 3), "\n")
 cat("Cohen's h for I2 vs Control:", round(h_I2_C, 3), "\n")
-# => reduction of mind. 25% is a Cohen's d of over 0.5 -> medium to large effect according to Cohen
+# => reduction of mind. 25% is a Cohen's h of over 0.5 -> medium to large effect according to Cohen
 
 # Sample size first pair-wise comparison (I1 vs C)
 ss_I1_C <- pwr.2p.test(h = h_I1_C, sig.level = alpha, power = power)
@@ -90,9 +89,8 @@ n_total <- n_per_arm * 3
 
 cat("Sample size per arm:", n_per_arm, "\n")
 cat("Total sample size (3-arm trial):", n_total)
-
 ```
-A reduction of at least 25% percentage points is a Cohen's d of over 0.5 => medium to large effect.
+A reduction of at least 25% percentage points is a Cohen's h of over 0.5 => medium to large effect.
 
 Adjust for multiplicity yes/no? TBD
 
