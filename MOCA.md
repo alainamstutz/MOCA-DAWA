@@ -23,6 +23,7 @@ library(lme4)
 library(glmmTMB) # robust SE
 library(marginaleffects) # robust SE
 library(insight) # robust SE
+library(geepack) # to tackle alternative and more robust (but less efficient?) estimands
 
 library(dplyr)
 library(pwr)
@@ -473,34 +474,34 @@ dd_sim <- dd_sim %>%
   mutate(rx = factor(rx)) %>%
   mutate(rx = relevel(rx, ref = "0"))
 
-# model <- glmer(y ~ rx + (1 | site), data = dd_sim, family = binomial)
-model <- glmmTMB(y ~ rx + (1 | site), data = dd_sim, family = binomial) # use glmmTMB instead to get RSEs via marginaleffects package
+model <- glmer(y ~ rx + (1 | site), data = dd_sim, family = binomial)
+# model <- glmmTMB(y ~ rx + (1 | site), data = dd_sim, family = binomial) # Alternative: glmmTMB instead to get RSEs via marginaleffects package, TBD
 
 # Wald
-wald <- summary(model)$coefficients$cond
+wald <- summary(model)$coefficients
 wald_est <- wald["rx1", "Estimate"]
 wald_se <- wald["rx1", "Std. Error"]
 wald_pval <- wald["rx1", "Pr(>|z|)"]
 wald_lower <- wald_est - 1.96 * wald_se
 wald_upper <- wald_est + 1.96 * wald_se
 
-# Cluster-robust SEs
-vcov_cr <- get_vcov(model, type = "CR2", cluster = dd_sim$site)
-params <- get_parameters(model)
-robust_est <- params$Estimate[params$Parameter == "rx1"]
-robust_se <- sqrt(diag(vcov_cr))["rx1"]
-robust_pval <- 2 * (1 - pnorm(abs(robust_est / robust_se)))
-robust_lower <- robust_est - 1.96 * robust_se
-robust_upper <- robust_est + 1.96 * robust_se
+# Cluster-robust SEs directly using glmmTMB and marginaleffects, TBD 
+# vcov_cr <- get_vcov(model, type = "CR2", cluster = dd_sim$site)
+# params <- get_parameters(model)
+# robust_est <- params$Estimate[params$Parameter == "rx1"]
+# robust_se <- sqrt(diag(vcov_cr))["rx1"]
+# robust_pval <- 2 * (1 - pnorm(abs(robust_est / robust_se)))
+# robust_lower <- robust_est - 1.96 * robust_se
+# robust_upper <- robust_est + 1.96 * robust_se
 
 # Combine
 results_table <- tibble(
-  Method = c("Wald (model-based)", "Cluster-robust SE"),
-  Estimate = round(c(wald_est, robust_est), 3),
-  OR = round(exp(c(wald_est, robust_est)), 2),
-  CI_Lower = round(exp(c(wald_lower, robust_lower)), 2),
-  CI_Upper = round(exp(c(wald_upper, robust_upper)), 2),
-  p_value = c(wald_pval, robust_pval)
+  Method = c("Wald (model-based)"),
+  Estimate = round(c(wald_est), 3),
+  OR = round(exp(c(wald_est)), 2),
+  CI_Lower = round(exp(c(wald_lower)), 2),
+  CI_Upper = round(exp(c(wald_upper)), 2),
+  p_value = c(wald_pval)
 ) %>%
   mutate(
     p_value = ifelse(p_value < 0.001, "<0.001", sprintf("%.3f", p_value))
@@ -517,7 +518,6 @@ results_table %>%
 |Method             | Estimate (log-odds)| Odds Ratio| 95% CI Lower| 95% CI Upper|p-value |
 |:------------------|-------------------:|----------:|------------:|------------:|:-------|
 |Wald (model-based) |              -1.206|        0.3|         0.17|         0.54|<0.001  |
-|Cluster-robust SE  |              -1.206|        0.3|         0.17|         0.54|<0.001  |
 
 ### Let's confirm the power
 
@@ -569,3 +569,195 @@ ggplot(data.frame(p_values), aes(x = p_values)) +
 ```
 
 ![](MOCA_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+### Let's discuss the different CRT estimands
+See https://doi.org/10.1093/ije/dyac131
+And https://journals.sagepub.com/doi/10.1177/09622802241254197
+And https://journals.sagepub.com/doi/10.1177/17407745231186094
+
+What’s the estimand of interest? This depends on the question you're trying to answer:
+
+1. Participant-average treatment effect
+
+Question: “What is the average effect of the intervention on an individual patient?”
+
+Each patient contributes equally.
+
+2. Cluster-average treatment effect
+
+Question: “What is the average effect of the intervention per facility?”
+
+Each facility contributes equally.
+
+See examples in publications: 
+(1) "For instance, if hospitals act as the cluster and the outcome relates to individual participants (e.g. a hospital-level intervention aiming to reduce mortality in presenting patients), then the participant-average treatment effect will be of most interest, as this represents the population impact of switching from the control to intervention."
+(2)"However, in a trial aiming to reduce unnecessary prescribing of antibiotics, in which doctors act as the cluster and outcomes are measured on each participant they treat, then a cluster-average treatment effect may also be of interest, as this provides the intervention’s effect on the clinician’s prescribing habits."
+
+"Consider a trial comparing a quality improvement (QI) intervention to improve outcomes in patients undergoing emergency laparotomy. This intervention involves local QI leads implementing a hospital-wide improvement programme at each cluster. The primary outcome is overall mortality within 90 days and a secondary outcome is whether a senior surgeon is present in the operating theatre (either performing the surgery or supervising a more junior
+surgeon in doing so). This outcome is intended to measure the success of the QI intervention in changing hospital practice.
+For the primary outcome, we need to decide whether a participant-average or cluster-average treatment effect is desired (i.e. do we want to know the average mortality reduction across patients or across hospitals?) Here, interest clearly lies in the intervention effect on individual patients
+(i.e. how many additional lives can be saved through the QI intervention?). Thus, a participant-average treatment effect is most relevant here.
+However, the key secondary outcome (whether a senior surgeon is present) is intended to measure treatment success at the cluster level (i.e. whether the intervention was effective in making hospitals change their practice around emergency laparotomies). Hence, for this outcome, a cluster-average estimand may be the most relevant. We note that for the secondary outcome (whether a senior surgeon is present), both a participant-average and cluster-average treatment effect may be of scientific interest, in which case both could be specified (e.g. with the cluster-average treatment effect designated as the primary). However, including both estimands should only be done if both are indeed of scientific interest."
+"In this trial, it is plausible that success in implementing the QI intervention may differ between smaller and larger clusters due to differing resource levels available, resulting in an interaction between treatment effect and cluster size."
+
+In CRTs, treatment effects can be estimated either by implementing an analysis either at the cluster level or the individual level.
+A cluster-level analysis involves calculating a summary measure for each cluster (e.g. the mean outcome across participants in that cluster) and then comparing cluster-level summaries. 
+In contrast, an individual-level analysis typically involves analysing participant-level outcomes using a regression model that accounts for correlations between participants from the same cluster.
+
+However, we can also reweight a cluster-level analysis to give each participant equal weight to target a participant-average treatment effect. Similarly, we could reweight individual-level analyses to give equal weight to each cluster to target a cluster-average treatment effect. For a cluster-level analysis, this is done by weighting each cluster by the number of participants within that cluster, and for a participant-level analysis, this is done by weighting each individual by the inverse number of participants in that cluster.
+
+Another issue in CRTs is that certain commonly used estimators can be biased when the cluster size is informative. Esp. when using:
+Mixed-effects models with a random intercept for cluster (and generalized estimating equations (GEEs) with an exchangeable working correlation structure).
+Because they they do not give equal weight to each participant. Instead, clusters are weighted by their inverse-variance, which is a function of both the cluster size and the ICC. 
+
+Solution: IEE = independence estimating equation
+Unbiased for the participant-average treatment effect, even if cluster size is informative.
+IEEs employ an independence working correlation structure in conjunction with robust standard errors to account for clustering.
+
+IEE can be easily implemented in R by using GEEs with a working independence assumption and robust standard errors or by using a standard regression model estimated by maximum likelihood/least squares with cluster-robust standard errors. 
+However, IEEs can be less efficient than mixed-effects models or GEEs with an exchangeable working correlation structure so the latter could be used if there is a strong reason a priori to believe that the cluster size will not be informative.
+
+#### Let's investigate the participant-average treatment effect first (using participant-level data only)
+
+```r
+# (1) mixed-effects, glmer
+model_glmer <- glmer(y ~ rx + (1 | site), 
+                     data = dd_sim, 
+                     family = binomial)
+
+# (2) GEE
+model_gee <- geeglm(y ~ rx, id = site, 
+                         data = dd_sim, 
+                         family = binomial(link = "logit"), 
+                         corstr = "exchangeable")
+
+# (3) IEE -> different to all above, robust to informative cluster size
+model_iee <- geeglm(y ~ rx, id = site, 
+                    data = dd_sim, 
+                    family = binomial(link = "logit"), # could also use "log" to directly get RR instead of OR (or "identity" for RD, though convergence can be tricky)
+                    corstr = "independence")
+
+# See R code in publication
+
+## Extract estimates from all models and compare across
+# Mixed-effects model using Wald
+wald <- summary(model_glmer)$coefficients
+wald_est <- wald["rx1", "Estimate"]
+wald_se <- wald["rx1", "Std. Error"]
+wald_pval <- wald["rx1", "Pr(>|z|)"]
+wald_lower <- wald_est - 1.96 * wald_se
+wald_upper <- wald_est + 1.96 * wald_se
+
+# GEE with an exchangeable working correlation structure 
+gee_est <- summary(model_gee)$coefficients["rx1", "Estimate"]
+gee_se <- summary(model_gee)$coefficients["rx1", "Std.err"]
+gee_pval <- summary(model_gee)$coefficients["rx1", "Pr(>|W|)"]
+gee_lower <- gee_est - 1.96 * gee_se
+gee_upper <- gee_est + 1.96 * gee_se
+
+# IEE with cluster-robust SEs
+iee_est <- summary(model_iee)$coefficients["rx1", "Estimate"]
+iee_se <- summary(model_iee)$coefficients["rx1", "Std.err"]
+iee_pval <- summary(model_iee)$coefficients["rx1", "Pr(>|W|)"]
+iee_lower <- iee_est - 1.96 * iee_se
+iee_upper <- iee_est + 1.96 * iee_se
+
+# Combine
+results_table <- tibble(
+  Method = c("Mixed-effect Wald (model-based)", "GEE with exch. corr.", "IEE with robust SE"),
+  Estimate = round(c(wald_est, gee_est, iee_est), 3),
+  OR = round(exp(c(wald_est, gee_est, iee_est)), 2),
+  CI_Lower = round(exp(c(wald_lower, gee_lower, iee_lower)), 2),
+  CI_Upper = round(exp(c(wald_upper, gee_upper, iee_upper)), 2),
+  p_value = c(wald_pval, gee_pval, iee_pval)
+) %>%
+  mutate(
+    p_value = ifelse(p_value < 0.001, "<0.001", sprintf("%.3f", p_value))
+  )
+
+# Display
+results_table %>%
+  kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
+  kable_styling(full_width = FALSE)
+```
+
+```
+## Warning in kable_styling(., full_width = FALSE): Please specify format in
+## kable. kableExtra can customize either HTML or LaTeX outputs. See
+## https://haozhu233.github.io/kableExtra/ for details.
+```
+
+
+
+|Method                          | Estimate (log-odds)| Odds Ratio| 95% CI Lower| 95% CI Upper|p-value |
+|:-------------------------------|-------------------:|----------:|------------:|------------:|:-------|
+|Mixed-effect Wald (model-based) |              -1.206|       0.30|         0.17|         0.54|<0.001  |
+|GEE with exch. corr.            |              -1.130|       0.32|         0.19|         0.56|<0.001  |
+|IEE with robust SE              |              -1.061|       0.35|         0.20|         0.60|<0.001  |
+
+#### Let's investigate the cluster-average treatment effect (using participant-level data only)
+Weighted independence estimating equations on participant-level data using robust standard errors, with inverse cluster-size weights equal to 1/n_i to give equal weight to each cluster
+
+Think about simpler cluster ATEs in a second step...
+
+```r
+# Calculate cluster sizes
+cluster_sizes <- table(dd_sim$site)
+dd_sim$cluster_size <- cluster_sizes[as.character(dd_sim$site)]
+dd_sim$inv_cluster_size <- 1 / dd_sim$cluster_size
+
+# Similar to IEE for individual ATE, but re-weight for cluster size, using inverse cluster-size weights
+model_cluster_iee <- geeglm(y ~ rx, id = site, 
+                    data = dd_sim, 
+                    weights = inv_cluster_size,
+                    family = binomial(link = "logit"),
+                    corstr = "independence")
+```
+
+```
+## Warning in eval(family$initialize): non-integer #successes in a binomial glm!
+```
+
+```r
+# See R code in publication
+
+## Extract estimates from all models and compare across
+# IEE for cluster level
+c_iee_est <- summary(model_cluster_iee)$coefficients["rx1", "Estimate"]
+c_iee_se <- summary(model_cluster_iee)$coefficients["rx1", "Std.err"]
+c_iee_pval <- summary(model_cluster_iee)$coefficients["rx1", "Pr(>|W|)"]
+c_iee_lower <- c_iee_est - 1.96 * c_iee_se
+c_iee_upper <- c_iee_est + 1.96 * c_iee_se
+
+# Combine
+results_table <- tibble(
+  Method = c("IEE cluster-average with SE"),
+  Estimate = round(c(c_iee_est), 3),
+  OR = round(exp(c(c_iee_est)), 2),
+  CI_Lower = round(exp(c(c_iee_lower)), 2),
+  CI_Upper = round(exp(c(c_iee_upper)), 2),
+  p_value = c(c_iee_pval)
+) %>%
+  mutate(
+    p_value = ifelse(p_value < 0.001, "<0.001", sprintf("%.3f", p_value))
+  )
+
+# Display
+results_table %>%
+  kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
+  kable_styling(full_width = FALSE)
+```
+
+```
+## Warning in kable_styling(., full_width = FALSE): Please specify format in
+## kable. kableExtra can customize either HTML or LaTeX outputs. See
+## https://haozhu233.github.io/kableExtra/ for details.
+```
+
+
+
+|Method                      | Estimate (log-odds)| Odds Ratio| 95% CI Lower| 95% CI Upper|p-value |
+|:---------------------------|-------------------:|----------:|------------:|------------:|:-------|
+|IEE cluster-average with SE |              -1.201|        0.3|         0.17|         0.53|<0.001  |
+
+
