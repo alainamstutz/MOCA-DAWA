@@ -696,7 +696,7 @@ results_table %>%
 |IEE with robust SE              |              -1.061|       0.35|         0.20|         0.60|<0.001  |
 
 #### Let's investigate the cluster-average treatment effect (using participant-level data only)
-Weighted independence estimating equations on participant-level data using robust standard errors, with inverse cluster-size weights equal to 1/n_i to give equal weight to each cluster
+Weighted IEE on participant-level data using robust standard errors, with inverse cluster-size weights equal to 1/n_i to give equal weight to each cluster
 
 Think about simpler cluster ATEs in a second step...
 
@@ -731,7 +731,7 @@ c_iee_upper <- c_iee_est + 1.96 * c_iee_se
 
 # Combine
 results_table <- tibble(
-  Method = c("IEE cluster-average with SE"),
+  Method = c("Weighted IEE with SE"),
   Estimate = round(c(c_iee_est), 3),
   OR = round(exp(c(c_iee_est)), 2),
   CI_Lower = round(exp(c(c_iee_lower)), 2),
@@ -756,8 +756,8 @@ results_table %>%
 
 
 
-|Method                      | Estimate (log-odds)| Odds Ratio| 95% CI Lower| 95% CI Upper|p-value |
-|:---------------------------|-------------------:|----------:|------------:|------------:|:-------|
-|IEE cluster-average with SE |              -1.201|        0.3|         0.17|         0.53|<0.001  |
+|Method               | Estimate (log-odds)| Odds Ratio| 95% CI Lower| 95% CI Upper|p-value |
+|:--------------------|-------------------:|----------:|------------:|------------:|:-------|
+|Weighted IEE with SE |              -1.201|        0.3|         0.17|         0.53|<0.001  |
 
-
+=> No difference between cluster ATE and individual ATE suggests no informative cluster size: "If there is no informative cluster size, the participant-average and cluster-average effects will coincide and mixed-effects models target this common treatment effect. However, they can be biased for both the participant- and cluster-average estimand in the presence of informative cluster size."
