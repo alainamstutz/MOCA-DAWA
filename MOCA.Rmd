@@ -93,32 +93,41 @@ cat("Total sample size (3-arm trial):", n_total)
 ```
 A reduction of at least 25% percentage points is a Cohen's d of over 0.5 => medium to large effect.
 
-Adjust for multiplicity yes/no.
+Adjust for multiplicity yes/no? TBD
 
 
 ## Now, move to a CRT design
 
-Now, figure out the design effect for clustering to add to individual RCT sample size
+(1) Let's figure out the design effect for clustering, to add to individual RCT sample size.
+
 The usual: DEFF = 1 + (m − 1) x ICC, whereby m = cluster size
 
-However, let's not forget the cluster size variation. The usual conservative adjustment of the DEFF with cluster size variation:
+However, let's not forget the cluster size variation! The usual conservative adjustment of the DEFF with cluster size variation:
+
 DEFF_cv = 1 + (m x (1 + CV^2) - 1) x ICC, whereby CV is the coefficient of variation (ratio of standard deviation of cluster sizes to mean of cluster sizes)
-See: https://pmc.ncbi.nlm.nih.gov/articles/PMC7394950/#sup1
+Same as implemented and recommended here: https://pmc.ncbi.nlm.nih.gov/articles/PMC7394950/#sup1
 
-We a logistic model for the binary outcome. We model the log-odds (logit) of success.
-We convert the linear predictor into a probability using the inverse logit (logistic function) and draw form a Bernoulli distribution based on the computed probabilities
+(2) Let's figure out the outcome model:
+We have a binary outcome and will use a logistic model to model the log-odds (logit) of success.
+So, we have to convert the linear predictor into a probability using the inverse logit (logistic function) and will draw form a Bernoulli distribution:
 
-P(Y_ij = 1) = e_ηij / 1 + e_ηij, whereby ηij = cj + β x rxj
+P(Y_ij = 1) = e_ηij / 1 + e_ηij, whereby ηij = c_j + β x rx_j (the linear predictor for individual i in cluster j)
+c_j = the random cluster effect (cluster-specific deviation from the overall average)
+β = the regression coefficient,
+rx_j = the treatment status of cluster j
 
-In logistic models, the ICC is:
-ICC = Between-site variance / Total variance, whereby the between-site variance represents the clustering
-The total variance in a logistic model is usually fixed at π^2 / 3 = 3.29 for the residual level (individual variation).
+After fitting the logistic regression, the inverse logit function is used to convert the log-odds (i.e. ηij) back into a probability.
 
-So, the between-site variance (σ^2c), i.e. cluster-level noise, is what we need and is therefore derived as:
+(3) Let's figure out the ICC:
+ICC = Between-site variance / Total variance, whereby the between-site variance represents the clustering. 
+
+In logistic models, the ICC is usually fixed at: π^2 / 3 = 3.29 for the residual level (individual variation).
+
+So, the between-site variance (σ^2c), i.e. cluster-level noise, is what we need, and is therefore derived as:
 
 ICC = σ^2c / σ^2c + (π^2 / 3)
 
-(If there’s additional within-site variation over time, we include σ^2cp, typically as a fraction of σ^2c, e.g., half the site-level variance -> for a later stage).
+(If there’s additional within-site variation over time, i.e. baseline period, we include σ^2cp, typically as a fraction of σ^2c, e.g., half the site-level variance -> for a later stage).
 ```{r, warning=FALSE}
 # Parameters
 p_C <- 0.75 # control: Baseline prescription rate
@@ -182,7 +191,7 @@ Cluster size increase to m=200 helps little as expected (reduce 2-3 clusters in 
 Using simstudy: https://kgoldfeld.github.io/simstudy/articles/simstudy.html
 
 ### Generate a three-arm trial directly
-CAVE: It works, but for now only if I use 1 outcome model.
+CAVE: It works, but only if I model all outcomes in 1 model (probably not the smartest), hence move to a simpler two-arm trial setup
 ```{r, warning=FALSE}
 # # Define the function to simulate a multi-arm cluster randomized trial
 # crt_binary_multiarm_varsize <- function(n_clusters, p0, p1, p2, ICC, cluster_size_mean, cluster_size_sd) {
@@ -267,7 +276,7 @@ CAVE: It works, but for now only if I use 1 outcome model.
 ```
 
 ### Generate a two-arm trial, based on primary and sample size determining contrast
-That means max 26 clusters, the rest is the same
+That means max 26 clusters, all other parameters remain the same
 ```{r, warning=FALSE}
 crt_binary_twoarm_varsize <- function(n_clusters, p0, p1, ICC, cluster_size_mean, CV) {
   
