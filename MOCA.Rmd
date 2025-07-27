@@ -63,8 +63,8 @@ Design considerations:
 # Parameters
 p_C <- 0.75 # control: Baseline prescription rate
 p_I1 <- 0.50 # int 1: 25pp reduction
-p_I2 <- 0.45 # int 2: 30pp reduction
-power <- 0.8 # desired power
+p_I2 <- 0.50 # int 2: 30pp reduction
+power <- 0.80 # desired power
 alpha <- 0.05 # apply bonferroni correction if adjustment for multiplicity
 
 # Effect sizes
@@ -131,19 +131,19 @@ ICC = σ^2c / σ^2c + (π^2 / 3)
 # Parameters
 p_C <- 0.75 # control: Baseline prescription rate
 p_I1 <- 0.50 # int 1: 25pp reduction
-p_I2 <- 0.45 # int 2: 30pp reduction
-power <- 0.8 # desired power
+p_I2 <- 0.50 # int 2: 30pp reduction
+power <- 0.80 # desired power
 ICC <- 0.20
 
 m <- 40
 
 alpha_familywise <- 0.05
 k <- 2  # number of comparisons
-alpha_bonf <- alpha_familywise # no correction for now!
+alpha_bonf <- alpha_familywise # no correction
 # alpha_bonf <- alpha_familywise / k # Bonferroni corrected alpha
 
 CV <- 0 # no variation
-CV <- 0.6 # 0.6 variation
+# CV <- 0.1 # 0.1 variation
 
 deff <- 1 + (m-1) * ICC
 deff_cv <- 1 + ((m*(1+CV^2))-1) * ICC # with cluster size variation
@@ -431,15 +431,15 @@ replicate_arm1_vs_control <- function() {
   dat$rx <- factor(dat$rx)
   dat$rx <- relevel(dat$rx, ref = "0")
   
-  model <- glmmTMB(y ~ rx + (1 | site), data = dat, family = binomial(link = "logit"))
-  pval <- summary(model)$coefficients$cond["rx1", "Pr(>|z|)"]
+  model <- glmer(y ~ rx + (1 | site), data = dat, family = binomial(link = "logit"))
+  pval <- summary(model)$coefficients["rx1", "Pr(>|z|)"]
   return(pval)
 }
 
 # Run 1000 simulations in parallel (I have max 8 cores)
 # parallel::detectCores()
 
-# set.seed(342)  # Set seed for reproducibility
+set.seed(342)  # Set seed for reproducibility
 
 pvals_arm1 <- mclapply(1:1000, function(x) replicate_arm1_vs_control(), mc.cores = 8)
 
@@ -507,7 +507,7 @@ IEE can be easily implemented in R by using GEEs with a working independence ass
 However, IEEs can be less efficient than mixed-effects models or GEEs with an exchangeable working correlation structure so the latter could be used if there is a strong reason a priori to believe that the cluster size will not be informative.
 
 #### Let's investigate the participant-average treatment effect first (using participant-level data only)
-```{r}
+```{r, warning=FALSE}
 # (1) mixed-effects, glmer
 model_glmer <- glmer(y ~ rx + (1 | site), 
                      data = dd_sim, 
@@ -519,7 +519,7 @@ model_gee <- geeglm(y ~ rx, id = site,
                          family = binomial(link = "logit"), 
                          corstr = "exchangeable")
 
-# (3) IEE -> different to all above, robust to informative cluster size
+# (3) IEE -> different to all above, robust to informative cluster size (assumes no correlation between observations within a cluster, but with robust standard errors...)
 model_iee <- geeglm(y ~ rx, id = site, 
                     data = dd_sim, 
                     family = binomial(link = "logit"), # could also use "log" to directly get RR instead of OR (or "identity" for RD, though convergence can be tricky)
@@ -574,7 +574,7 @@ results_table %>%
 Weighted IEE on participant-level data using robust standard errors, with inverse cluster-size weights equal to 1/n_i to give equal weight to each cluster
 
 Think about simpler cluster ATEs in a second step...
-```{r}
+```{r, warning=FALSE}
 # Calculate cluster sizes
 cluster_sizes <- table(dd_sim$site)
 dd_sim$cluster_size <- cluster_sizes[as.character(dd_sim$site)]
@@ -599,7 +599,7 @@ c_iee_upper <- c_iee_est + 1.96 * c_iee_se
 
 # Combine
 results_table <- tibble(
-  Method = c("Weighted IEE with SE"),
+  Method = c("Cluster-weighted IEE with robust SE"),
   Estimate = round(c(c_iee_est), 3),
   OR = round(exp(c(c_iee_est)), 2),
   CI_Lower = round(exp(c(c_iee_lower)), 2),
@@ -615,7 +615,184 @@ results_table %>%
   kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
   kable_styling(full_width = FALSE)
 
-
 ```
 
 => No difference between cluster ATE and individual ATE suggests no informative cluster size: "If there is no informative cluster size, the participant-average and cluster-average effects will coincide and mixed-effects models target this common treatment effect. However, they can be biased for both the participant- and cluster-average estimand in the presence of informative cluster size."
+
+#### Thompson et al. Cluster randomised trials with a binary outcome and a small number of clusters
+Conclusion: We recommend that CRTS with 30 or fewer clusters and a binary outcome use an unweighted cluster-level analysis, or GLMM using REPL. Confidence intervals and p-values for both methods should be calculated based on a t-distribution with the number of degrees of freedom defined as the number of clusters minus cluster-level parameters.
+
+SAS code for GLMM using restricted pseudo-likelihood (REPL) and DF adapted:
+
+proc glimmix data = work.china method = rspl; 
+  class countyid;
+  model totalmissed_cm10/patients = arm / dist=binomial link=logit solution ddfm = bw;
+  random int / subject = countyid
+
+Most likely corresponding R code: Article suggests via glmmPQL (MASS package)!
+```{r, warning=FALSE}
+library(MASS)
+# Fit the GLMM using glmmPQL / The random effect is specified using `random = ~1 | cluster_id`
+model_pql <- glmmPQL(
+  fixed = y ~ rx, 
+  random = ~1 | site, 
+  family = binomial(link = "logit"), 
+  data = dd_sim
+)
+
+# Manual Calculation of Degrees of Freedom, P-value, and CI
+n_clusters <- length(unique(dd_sim$site))
+n_fixed_params <- length(fixef(model_pql))
+df_manual <- n_clusters - n_fixed_params # Number of fixed effects at the cluster level = 1 (treatment) + 1 (intercept) = 2 => "degrees of freedom as clusters minus cluster-level parameters"
+
+treatment_coef <- model_pql$coefficients$fixed["rx1"]
+treatment_se <- summary(model_pql)$tTable["rx1", "Std.Error"]
+t_stat <- treatment_coef / treatment_se
+p_value <- 2 * pt(-abs(t_stat), df = df_manual)
+
+t_critical <- qt(0.975, df = df_manual)
+ci_lower_log <- treatment_coef - t_critical * treatment_se
+ci_upper_log <- treatment_coef + t_critical * treatment_se
+
+# Combine
+results_table <- tibble(
+  Method = c("Restricted pseudolikelihood GLMM with DoF clusters minus cluster-level parameters"),
+  Estimate = round(c(treatment_coef), 3),
+  OR = round(exp(c(treatment_coef)), 2),
+  CI_Lower = round(exp(c(ci_lower_log)), 2),
+  CI_Upper = round(exp(c(ci_upper_log)), 2),
+  p_value = c(p_value)
+) %>%
+  mutate(
+    p_value = ifelse(p_value < 0.001, "<0.001", sprintf("%.3f", p_value))
+  )
+
+# Display
+results_table %>%
+  kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
+  kable_styling(full_width = FALSE)
+```
+
+
+## Reproduce Clan command from Stata in R
+see: https://pubmed.ncbi.nlm.nih.gov/37850046/ 
+Cluster-level analysis, including adjustment and risk ratio output.
+However, only 1 stratification variable implemented in Clan command.
+
+Aim: Reproduce Clan in R and allow more stratification variables.
+```{r, warning=FALSE}
+# This version includes 2 stratification variables `stratum1` and `stratum2`
+crt_binary_twoarm_varsize_y0_strat <- function(n_clusters, p0, p1, ICC, cluster_size_mean, CV) {
+  
+  logit_p0 <- log(p0 / (1 - p0))
+  logit_p1 <- log(p1 / (1 - p1))
+  beta1 <- logit_p1 - logit_p0
+
+  # Define cluster-level variables including stratification
+  defC <- defData(varname = "rx", formula = "1;1", dist = "trtAssign")
+  defC <- defData(defC, varname = "stratum1", formula = "0.5", dist = "binary")
+  defC <- defData(defC, varname = "stratum2", formula = "1;1;1", dist = "categorical")
+
+  sigma2_c <- ICC * (pi^2 / 3) / (1 - ICC)
+  cat("Between-site variance (σ^2c):", sigma2_c, "\n")
+  defC <- defData(defC, varname = "c", formula = "0", variance = sigma2_c, dist = "normal")
+
+  dc <- genData(n_clusters, defC, id = "site")
+  
+  shape <- 1 / CV^2
+  scale <- cluster_size_mean * CV^2
+  cluster_sizes <- round(rgamma(n_clusters, shape = shape, scale = scale))
+  cluster_sizes[cluster_sizes <= 0] <- 1 
+
+  dd <- genCluster(dc, "site", cluster_sizes, "id")
+
+  defY0 <- defDataAdd(varname = "y0", formula = 0.4, dist = "binary") 
+  dd <- addColumns(defY0, dd)
+  
+  # defNoise <- defDataAdd(varname = "noise", formula = "0", variance = 1.0, dist = "normal")
+  # dd <- addColumns(defNoise, dd)
+  
+  defS <- defDataAdd(
+    varname = "y1", 
+    formula = paste0("c + ", logit_p0, " + ", beta1, " * rx + 0.3 * y0"), # 0.3 correlation y0 -> y1
+    dist = "binary", link = "logit"
+  )
+  
+  dd <- addColumns(defS, dd)
+
+  return(dd)
+}
+
+# Set seed for reproducibility
+set.seed(342) 
+
+# Call the function with parameters for the **success** probabilities
+df_crt_b <- crt_binary_twoarm_varsize_y0_strat(
+  n_clusters = 26, 
+  p0 = 0.75, 
+  p1 = 0.50,
+  ICC = 0.20, 
+  cluster_size_mean = 40, 
+  CV = 0.6
+)
+
+# STAGE 1: Predict expected outcome from baseline and stratification variables
+# The model now includes `y0`, `stratum1`, and `stratum2`
+model_stage1 <- glm(y1 ~ y0 + stratum1 + stratum2, data = df_crt_b, family = binomial())
+df_crt_b$pred <- predict(model_stage1, type = "response")
+
+# Cluster-level observed and expected proportions
+# The aggregation step now groups by site, rx, and the stratification variables
+cluster_summary <- df_crt_b %>%
+  group_by(site, rx, stratum1, stratum2) %>%
+  summarise(
+    obs_prop = mean(y1), 
+    exp_prop = mean(pred), 
+    .groups = "drop"
+  ) %>%
+  mutate(
+    ratio_residual = obs_prop / exp_prop
+  )
+
+# STAGE 2: Compare ratio residuals across arms, adjusting for stratification
+# The linear model now includes `stratum1` and `stratum2` as predictors
+model_stage2 <- lm(log(ratio_residual) ~ rx + stratum1 + stratum2, data = cluster_summary)
+
+# Extract adjusted log risk ratio and 95% CI
+log_rr <- coef(model_stage2)["rx"]
+se <- summary(model_stage2)$coefficients["rx", "Std. Error"]
+df <- df.residual(model_stage2)
+t_crit <- qt(0.975, df)
+
+# Confidence interval and final output
+log_rr_ci <- c(log_rr - t_crit * se, log_rr + t_crit * se)
+rr <- exp(log_rr)
+rr_ci <- exp(log_rr_ci)
+
+cat("Adjusted Risk Ratio for SUCCESS (RR_success):", round(rr, 3), "\n")
+cat("95% CI:", round(rr_ci[1], 3), "-", round(rr_ci[2], 3), "\n")
+
+# # To get the Risk Ratio for FAILURE, we simply take the reciprocal
+# rr_failure <- 1/rr
+# rr_failure_ci <- 1/rev(rr_ci)
+# 
+# cat("\nAdjusted Risk Ratio for FAILURE (RR_failure):", round(rr_failure, 3), "\n")
+# cat("95% CI:", round(rr_failure_ci[1], 3), "-", round(rr_failure_ci[2], 3), "\n")
+
+# Plot 1: Raw observed cluster proportions by arm
+ggplot(cluster_summary, aes(x = factor(rx), y = obs_prop)) +
+  geom_jitter(width = 0.1, height = 0, size = 2, alpha = 0.8) +
+  stat_summary(fun = mean, geom = "crossbar", width = 0.3, color = "red") +
+  labs(x = "Treatment Arm (rx)", y = "Observed Cluster-Level Proportion",
+       title = "Cluster-Level Outcome Proportions by Arm") +
+  theme_minimal()
+
+# Plot 2: Adjusted ratio residuals by arm (used for adjusted RR)
+ggplot(cluster_summary, aes(x = factor(rx), y = ratio_residual)) +
+  geom_jitter(width = 0.1, height = 0, size = 2, alpha = 0.8) +
+  stat_summary(fun = mean, geom = "crossbar", width = 0.3, color = "blue") +
+  labs(x = "Treatment Arm (rx)", y = "Adjusted ratio residual (Observed / Expected)",
+       title = "Adjusted cluster residuals by arm") +
+  theme_minimal()
+```
+
