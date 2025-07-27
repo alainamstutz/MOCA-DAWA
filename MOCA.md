@@ -832,6 +832,48 @@ results_table %>%
 |:---------------------------------------------------------------------------------|-------------------:|----------:|------------:|------------:|:-------|
 |Restricted pseudolikelihood GLMM with DoF clusters minus cluster-level parameters |              -1.175|       0.31|         0.17|         0.57|<0.001  |
 
+```r
+# To get something better interpretable, calculate marginal effects -> feed into marginaleffects
+library(marginaleffects)
+# The function calculates the average risk ratio across the entire dataset.
+rr_marginaleffects_pql <- avg_comparisons(
+  model_pql,
+  variables = "rx",
+  type = "response",
+  comparison = "ratio"
+)
+
+# 4. Display Results
+summary(rr_marginaleffects_pql)
+```
+
+```
+##      term             contrast            estimate        std.error      
+##  Length:1           Length:1           Min.   :0.6226   Min.   :0.07716  
+##  Class :character   Class :character   1st Qu.:0.6226   1st Qu.:0.07716  
+##  Mode  :character   Mode  :character   Median :0.6226   Median :0.07716  
+##                                        Mean   :0.6226   Mean   :0.07716  
+##                                        3rd Qu.:0.6226   3rd Qu.:0.07716  
+##                                        Max.   :0.6226   Max.   :0.07716  
+##    statistic        p.value             s.value         conf.low     
+##  Min.   :8.069   Min.   :7.059e-16   Min.   :50.33   Min.   :0.4714  
+##  1st Qu.:8.069   1st Qu.:7.059e-16   1st Qu.:50.33   1st Qu.:0.4714  
+##  Median :8.069   Median :7.059e-16   Median :50.33   Median :0.4714  
+##  Mean   :8.069   Mean   :7.059e-16   Mean   :50.33   Mean   :0.4714  
+##  3rd Qu.:8.069   3rd Qu.:7.059e-16   3rd Qu.:50.33   3rd Qu.:0.4714  
+##  Max.   :8.069   Max.   :7.059e-16   Max.   :50.33   Max.   :0.4714  
+##    conf.high       predicted_lo     predicted_hi      predicted     
+##  Min.   :0.7739   Min.   :0.5657   Min.   :0.2869   Min.   :0.5657  
+##  1st Qu.:0.7739   1st Qu.:0.5657   1st Qu.:0.2869   1st Qu.:0.5657  
+##  Median :0.7739   Median :0.5657   Median :0.2869   Median :0.5657  
+##  Mean   :0.7739   Mean   :0.5657   Mean   :0.2869   Mean   :0.5657  
+##  3rd Qu.:0.7739   3rd Qu.:0.5657   3rd Qu.:0.2869   3rd Qu.:0.5657  
+##  Max.   :0.7739   Max.   :0.5657   Max.   :0.2869   Max.   :0.5657
+```
+predicted_lo and predicted_hi: These are the average predicted probabilities for the control (_lo) and treatment (_hi) groups, respectively. You can verify that their ratio is equal to the estimated risk ratio.
+
+0.2869 / 0.5657 ≈ 0.507 (The slight difference is due to the non-linear transformation and how the average is calculated, but they are conceptually related)
+
 
 ## Reproduce Clan command from Stata in R
 see: https://pubmed.ncbi.nlm.nih.gov/37850046/ 

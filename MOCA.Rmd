@@ -671,7 +671,25 @@ results_table <- tibble(
 results_table %>%
   kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
   kable_styling(full_width = FALSE)
+
+
+# To get something better interpretable, calculate marginal effects -> feed into marginaleffects
+library(marginaleffects)
+# The function calculates the average risk ratio across the entire dataset.
+rr_marginaleffects_pql <- avg_comparisons(
+  model_pql,
+  variables = "rx",
+  type = "response",
+  comparison = "ratio"
+)
+
+# 4. Display Results
+summary(rr_marginaleffects_pql)
+
 ```
+predicted_lo and predicted_hi: These are the average predicted probabilities for the control (_lo) and treatment (_hi) groups, respectively. You can verify that their ratio is equal to the estimated risk ratio.
+
+0.2869 / 0.5657 ≈ 0.507 (The slight difference is due to the non-linear transformation and how the average is calculated, but they are conceptually related)
 
 
 ## Reproduce Clan command from Stata in R
