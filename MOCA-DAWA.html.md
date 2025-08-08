@@ -1,0 +1,106 @@
+---
+title: "MOCA/DAWA cluster randomized trial"
+author: "A.Amstutz"
+format:
+  html:
+    toc: true
+    toc-float: true
+    code-fold: true
+    keep-md: true
+  pdf:
+    toc: true
+editor: visual
+---
+
+
+
+
+
+## Packages
+
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+RNGkind("L'Ecuyer-CMRG") # simstudy
+set.seed(19287) # for reproducibility
+library(simstudy)
+library(parallel) # for parallelization of core (max 8 on my laptop)
+
+library(lme4)
+library(marginaleffects) # marginal standardization
+library(insight) # robust SE
+library(geepack) # to tackle alternative and more robust (but less efficient?) estimands
+
+library(dplyr)
+library(pwr)
+library(ggplot2)
+library(kableExtra)
+```
+:::
+
+
+
+
+## DAWA cluster randomized trial (CRT)
+
+Interventions on the level of health care workers to reduce antibiotic prescriptions at health facilities in Zanzibar. Multi-arm with 2 interventions:
+
+-   **Control**: Standard of care
+
+-   **Intervention 1**: eHealth tool (CDSS & nudging)
+
+-   **Intervention 2**: eHealth tool (CDSS & nudging) + AMR stewardship clubs
+
+### Parameters
+
+-   Eligible participants: Patients attending the dispensary with acute infectious illness
+
+-   Power for subgroup of kids under 5 years (special subgroup of interest), ca. 33% of all attending patients
+
+-   Cluster size of eligible overall participants: 80-500 per cluster per month (cluster size variation!)
+
+-   Cluster size of eligible kids under 5 years: 26-165 per cluster per month
+
+-   Max. 39 clusters (health dispensaries) due to feasibility/budget
+
+-   Binary outcome: Proportion of patients prescribed an antibiotic at first presentation to care
+
+-   Baseline prescription rate in control clusters: 75%, based on data from existing facilities but some variability
+
+-   Expected delta Control to Intervention 1: 25 percentage points, based on previous studies in same setting
+
+-   Expected delta Control to Intervention 2: 30 percentage points
+
+-   Intervention 1 vs Intervention 2 not of primary interest
+
+-   Desired power min. 80%
+
+-   ICC for AB prescription: 0.2, based on previous studies in same setting, but some uncertainty
+
+-   Mean cluster size: 40/month, but high variability (ratio of standard deviation of cluster sizes to mean of cluster sizes: 0.5-0.6)
+
+-   We expect intervention effect to manifest 3-4 months after baseline
+
+### Design considerations
+
+-   3-arm vs 2x 2-arm?
+
+<!-- -->
+
+-   Recruitment bias?
+
+-   Secular trend?
+
+-   Which pair-wise comparisons to power for?
+
+-   Multiplicity?
+
+
+
+
+::: {.cell}
+
+:::
