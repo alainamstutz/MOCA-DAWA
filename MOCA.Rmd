@@ -1,5 +1,5 @@
 ---
-title: "MOCA cluster trial"
+title: "MOCA/DAWA cluster trial"
 author: "A.Amstutz"
 date: "2025-02-15"
 output:
@@ -19,8 +19,7 @@ library(simstudy)
 library(parallel) # for parallelization of core (max 8 on my laptop)
 
 library(lme4)
-# library(glmmTMB) # robust SE
-# library(marginaleffects) # robust SE
+library(marginaleffects) # marginal standardization
 library(insight) # robust SE
 library(geepack) # to tackle alternative and more robust (but less efficient?) estimands
 
