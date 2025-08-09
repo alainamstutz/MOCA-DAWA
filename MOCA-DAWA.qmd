@@ -74,23 +74,39 @@ Interventions on the level of health care workers to reduce antibiotic prescript
 ```{r}
 #| message: false
 #| warning: false
-RNGkind("L'Ecuyer-CMRG") # simstudy
-set.seed(19287) # for reproducibility
-library(simstudy)
-library(parallel) # for parallelization of core (max 8 on my laptop)
+# Packages and helpers
+req_pkgs <- c("pwr",
+              "dplyr",
+              "purrr",
+              "ggplot2",
+              "lme4",
+              "geepack",
+              "parallel", # for parallelization of core (max 8 on my laptop)
+              "MASS", # for GLMM PQL
+              "future.apply",
+              "matrixStats",
+              "marginaleffects" # marginal standardization
+)
+install_if_missing <- function(pkgs){
+  for(p in pkgs){
+    if(!requireNamespace(p, quietly=TRUE)){
+      install.packages(p, repos="https://cloud.r-project.org")
+    }
+    library(p, character.only=TRUE)
+  }
+}
+install_if_missing(req_pkgs)
 
-library(lme4)
-library(marginaleffects) # marginal standardization
-library(insight) # robust SE
-library(geepack) # to tackle alternative and more robust (but less efficient?) estimands
+# RNGkind("L'Ecuyer-CMRG") # simstudy
+# library(insight) # robust SE
+# library(simstudy)
+# library(kableExtra)
 
-library(dplyr)
-library(pwr)
-library(ggplot2)
-library(kableExtra)
+# set global RNG seed for reproducibility
+set.seed(20250809)
 ```
 
-# Corresponding individual randomized trial
+## Corresponding individual randomized trial
 
 Sample size for the individual randomized trial on the same question
 
@@ -128,9 +144,7 @@ cat("Total sample size (3-arm trial):", n_total)
 
 A reduction of at least 25% percentage points (the smaller delta of the two) represents a Cohen's h of \>0.5 =\> medium to large effect
 
-# Now, move to a CRT design
-
-## **(1) Standard sample size calculation**
+# **(1) Standard sample size calculation**
 
 **Figure out the design effect (DEFF) for clustering, to add to the individual RCT sample size**
 
@@ -140,7 +154,7 @@ DEFF = 1+(m−1)ICC , whereby m = cluster size
 
 However, let's not forget the cluster size variation! The usual conservative adjustment of the DEFF with cluster size variation is:
 
-DEFF_cv = 1+((m(1+CV^2)−1))ICC , whereby CV is the coefficient of variation (ratio of standard deviation of cluster sizes to mean of cluster sizes)
+DEFF_cv = 1+((m(1+CV\^2)−1))ICC , whereby CV is the coefficient of variation (ratio of standard deviation of cluster sizes to mean of cluster sizes)
 
 See here: [https://pmc.ncbi.nlm.nih.gov/articles/PMC7394950/#sup1](#0)
 
@@ -192,9 +206,9 @@ cat("Total cluster sample size:", tot_clusters, "\n")
 cat("Total individual sample size:", tot_ind, "\n")
 ```
 
-### **(1.1) Varying assumptions - Standard sample size calculation**
+## **(1.1) Varying assumptions - Standard sample size calculation**
 
-#### **(1.1.1) Varying baseline control rate**
+### **(1.1.1) Varying baseline control rate**
 
 All parameters fixed, except baseline control rate versus number of clusters & individuals needed
 
@@ -294,7 +308,7 @@ ggplot(results_df, aes(x = p_C, y = n_individuals_per_arm * 3)) +
 
 ```
 
-#### **(1.1.2) Varying ICC**
+### **(1.1.2) Varying ICC**
 
 All parameters fixed, except ICC versus number of clusters & individuals needed
 
@@ -384,26 +398,1015 @@ ggplot(results_df, aes(x = ICC, y = n_individuals_per_arm * 3)) +
   scale_y_continuous(breaks = seq(0, max(results_df$n_individuals_per_arm * 3), by = 100))
 ```
 
-#### **(2) Let's figure out the outcome model** 
+# **(2) Simulate dataset for sample size calculation and analysis**
 
-We have a binary outcome and plan to use a mixed-effects logistic model to model the log-odds (logit) of success. We convert the linear predictor into a probability using the inverse logit (logistic function) and will draw from a Bernoulli distribution:
+## **(2.1) Parameters**
 
-P(Y_ij=1) = e_nij/(1+e_nij) , whereby nij = c_j + β*rx_j (the linear predictor for individual i in cluster j)
+We follow the simulation setup according to J. Thompson & C. Leyrat, because we have the scenario of binary outcome and small-ish cluster sample size (26-30 clusters for the main pair-wise comparison): <https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-022-01699-2>
 
--   c_j = the random cluster effect (cluster-specific deviation from the overall average)
+But we adapt the parameters to our scenario.
 
--   β = the regression coefficient
+CAVE: We move to simulate a simpler two-arm trial setup, since power/sample size is anyway based on may pair-wise comparison (control vs int 1) =\> Max. 26 clusters!
 
--   rx_j = the treatment status of cluster j
+Ideally we will estimate risk ratios due to common outcome (AB prescription), or marginal standardization of the odds ratio and draw RR/RD from it.
 
-After fitting the logistic regression, the inverse logit function is used to convert the log-odds (i.e., e_nij) back into a probability.
+**Data-generating model (per cluster):**
 
-**(3) Let's figure out the ICC:** ICC=textBetween−sitevariance/textTotalvariance, whereby the between-site variance represents the clustering.
+-   For arm i (0=control, 1=intervention) and cluster j:
 
-In logistic models, the ICC is usually fixed at: pi2/3=3.29 for the residual level (individual variation).
+    Yij ∼ Binomial(m_ij, p_ij), logit⁡(p_ij) = β0 + β1_i + u_j ,
 
-So, the between-site variance (sigma2_c), i.e. cluster-level noise, is what we need, and is therefore derived as:
+    where u_j is a cluster random effect with mean 0 and variance σ\^2_b
 
-ICC=sigma2_c/(sigma2_c+(pi2/3))
+    -   ​Binomial(m_ij, p_ij): Conditional on p_ij, we assume each of the m_ij individuals in that cluster are independent Bernoulli trials with probability p_ij. So Yij is a binomial draw with that probability.
 
-(If there’s additional within-site variation over time, i.e. baseline period, we include sigma2_cp, typically as a fraction of sigma2_c, e.g., half the site-level variance -\> for a later stage).
+        -   We don't know p_ij, we model it, *Imagine we freeze* p_ij at its true value for this cluster/arm. Now we talk about the individuals’ outcomes *given* that fixed number.
+
+        -   A **Bernoulli trial** is a random event with two outcomes (success/failure), with the same, independent, probability of success every time.
+
+        -   The “independent” part means that whether one person gets the prescription doesn’t change the probability for another person in the same cluster (once p_ij is fixed).
+
+        -   The usual *within-cluster independence assumption* in a hierarchical model: the correlation between people’s outcomes in the same cluster comes entirely from them sharing the same p_ij.
+
+        -   =\> Yij can be any integer from 0 to m_ij. If m_ij =42 and p_ij =0.50, then Yij is the total number of prescriptions in that cluster, drawn from a binomial distribution with 42 trials and 0.5 success probability.
+
+    -   logit⁡(p_ij) = β0 + β1_i + u_j:
+
+        -   Using the logit link maps probability p ∈ (0,1) to the whole real line, so we can model it as a linear predictor.
+
+        -   β0 is the baseline log-odds (the logit of the control probability for a *typical* cluster, i.e. when u_j = 0).
+
+        -   β1_i encodes the treatment effect and is a log-odds difference; exp⁡(β1) is the *conditional odds ratio* comparing treatment vs control for the *same cluster* (holding u_j fixed).
+
+        <!-- -->
+
+        -   u_j is the **cluster random intercept** (a cluster-level shift on the log-odds scale). It captures unobserved cluster-level factors (e.g. prescriber tendency) that move all individuals in the cluster up/down in log-odds. Typically, u_j has mean 0 and variance σ\^2_b and is independent across clusters. The random intercept does not change the conditional treatment effect, it only shifts the baseline log-odds for that whole cluster.
+
+        -   In other words, the *difference in log-odds* between arms for the same cluster is always constant) but the *actual probabilities* shift up/down with u_j. For clusters with positive u_j both arms have higher probabilities; for negative u_j both are lower.
+
+-   **Prevalences in control:** default: 75% (i.e. β0 is marginal cluster-specific probability = 0.75 when u_j​=0), but varying
+
+-   **Intervention effect:** (a) no effect (β1​=0), (b) a non-zero cluster-specific odds ratio so that the scenario has \~80% power (they used Stata’s power command / design effect to pick the OR, we use equivalent in R), see some scenarios below.
+
+-   **ICC on log-odds scale:** default: 0.2, but varying: 0.05, 0.1, 0.2, 0.25. The ICC is defined (on log-odds scale) as:
+
+    -   ICC = *p = rho* = σ\^2_b / (σ\^2_b+(π\^2/3))
+
+    -   The ICC consists of individual-level variance (noise) and between-cluster variance (noise), in the sense of "between-cluster variance / Total variance". The between-cluster variance approximates the cluster random effect variance (σ\^2_b)
+
+    -   In logistic models, the individual level variation is usually fixed at π\^2/3 (3.29)
+
+    -   So, focusing on the cluster random effect variance (σ\^2_b), we can derive it from the formula above as: σ_b = *sigma_b* = sqrt((ICC(π\^2/3))/(1−ICC))
+
+    -   (If there’s additional within-site variation over time, i.e. baseline period, we include σ\^2_b_p, typically as a fraction of σ\^2_b, e.g., half the site-level variance -\> for a later stage with baseline period design).
+
+-   **Cluster effect distributions (default: Gamma; but allow for 2 other choices):**
+
+    -   Normal: u_j ∼ N(0, σ\^2_b)
+
+    -   Gamma (skewed): generate a_j ∼ Gamma(shape=2,scale=1) then set u_j ​= σ_b(​(a_j​−2)/sqrt(2))
+
+        -   This makes mean 0 and variance σ\^2_b, A shape parameter of 2 give a distribution with skew 1.4 and kurtosis 3 (shape=2 chosen; skew\~1.4)​.
+
+        -   The shape parameter of the Gamma disitribution was set to 2 as a way of comparing small sample performance to large sample performance with non-normal random eﬀects. Heagerty and Kurland found in *large samples*, generalised linear mixed models gave cluster-level covariate estimates with little bias with a shape parameter of 2 or larger, but smaller values lead to biased eﬀect estimates.
+
+        -   Choice of distribution **(**Normal, Gamma-derived skewed, Uniform) changes the shape of cluster heterogeneity: Normal is symmetric, Gamma-derived allows positive skew (some clusters much higher than average), Uniform gives bounded heterogeneity.
+
+    -   Uniform**:** u_j ∼ Uniform(−sqrt(3)σ_b, sqrt(3)σ_b)
+
+        -   this makes mean 0 and variance σ\^2_b, zero skew, and kurtosis -6/5.
+
+-   **Trial designs / cluster counts:**
+
+    -   Number of clusters total: default = 26, varying: n ∈ {20,30,40} (1:1 randomisation between arms). 
+
+-   **Cluster sizes** m_ij​:
+
+    -   Mean cluster size: default = 40; varying: m ∈ {30,40,50,80}
+
+    -   Coefficient of variation (CV) of cluster sizes: default 0.1; varying: 0, 0.1, 0.5 (CV = 0 = equal cluster sizes)
+
+    -   When variable, they sampled cluster sizes so that m_ij = 2 + δ_ij,​ drawn from a Negative Binomial:
+
+        -   δ_ij ​∼ NegBin(size = (m-2)\^2/(s\^2-(m-2)), p = m-2/s\^2)
+
+        -   where s is the SD of cluster sizes (so CV = s/m). This yields a minimum cluster size of 3. (Exact parameterisation note: they wrote no.offails and prob.offail; the above is the equivalent negative-binomial parametrisation used to obtain the desired mean and variance).
+
+## **(2.2) Simulate one dataset**
+
+```{r}
+# 1) compute sigma_b from ICC (on latent logit scale):
+icc_to_sigma <- function(rho){
+  if(rho<=0) return(0)
+  sigma_b <- sqrt( (rho * (pi^2/3)) / (1 - rho) )
+  return(sigma_b)
+}
+
+# 2) compute beta0 for given control prevalence p0
+p_to_beta0 <- function(p0){
+  qlogis(p0)
+}
+
+# 3) given p0 and p1, compute OR on the cluster-specific log-odds scale
+p0_p1_to_OR <- function(p0, p1){
+  odds0 <- p0 / (1 - p0)
+  odds1 <- p1 / (1 - p1)
+  odds1 / odds0
+}
+
+# 4) generate random cluster-level u_j for the three distributions
+generate_u <- function(n_clusters, sigma_b, dist = c("normal","gamma","uniform")){
+  dist <- match.arg(dist)
+  if(sigma_b == 0) return(rep(0, n_clusters))
+  if(dist == "normal"){
+    return(rnorm(n_clusters, mean=0, sd = sigma_b))
+  } else if(dist == "gamma"){
+    # they used Gamma(shape=2, scale=1) then standardized to mean 0 and sd sigma_b
+    a <- rgamma(n_clusters, shape=2, scale=1)
+    # a has mean 2, var 2. Standardize: (a - 2)/sqrt(2) then scale to sigma_b
+    return(sigma_b * (a - 2)/sqrt(2))
+  } else if(dist == "uniform"){
+    # Uniform(-sqrt(3)*sigma_b, sqrt(3)*sigma_b) has variance sigma_b^2
+    cut <- sqrt(3) * sigma_b
+    return(runif(n_clusters, min = -cut, max = cut))
+  }
+}
+
+# 5) generate cluster sizes with target mean m and CV. Implementation follows their negative-binomial based approach and enforces minimum cluster size of 3.
+generate_cluster_sizes <- function(n_clusters, m, CV){
+  if(CV == 0){
+    return(rep(m, n_clusters))
+  }
+  s <- CV * m # target SD of cluster sizes
+  # We want delta = m_j - 2 to follow NegBin with mean (m-2) and variance s^2
+  mu_delta <- m - 2
+  var_delta <- s^2
+  if(var_delta <= mu_delta){
+    # This is an impossible NB parameterization (variance must exceed mean).
+    # Fall back to a discrete uniform around m to get approximate CV.
+    low <- max(3, floor(m - s*1.5))
+    high <- ceiling(m + s*1.5)
+    out <- pmax(3, round(runif(n_clusters, low, high)))
+    return(out)
+  }
+  size_nb <- (mu_delta^2) / (var_delta - mu_delta)
+  prob_nb <- mu_delta / var_delta
+  # rnbinom in R uses size, prob; mean = size*(1-prob)/prob, but with this param it matches
+  delta <- rnbinom(n_clusters, size = size_nb, prob = prob_nb)
+  m_j <- 2 + delta
+  # enforce minimum 3 (paper used 3 as minimum, but generating 2+delta ensures >=2, we bump to 3)
+  m_j[m_j < 3] <- 3
+  return(m_j)
+}
+
+# Parameters for single simulated dataset
+n_clusters <- 26
+m_mean <- 40
+CV <- 0.1
+p0 <- 0.75 # control group probability of outcome (e.g., antibiotic prescription)
+p1 <- 0.50 # intervention group probability of outcome
+OR <- p0_p1_to_OR(p0, p1)  # compute OR from p0 and p1
+rho <- 0.20 # ICC
+re_dist <- "uniform"
+
+# Simulate
+set.seed(20250809)
+sigma_b <- icc_to_sigma(rho)
+u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
+arm_assign <- sample(rep(0:1, length.out = n_clusters))
+beta0 <- p_to_beta0(p0)
+beta1 <- log(OR)
+
+# y = number of individual-level successes (binary=1) observed in the cluster, i.e., represents the count of individuals in the cluster who received an AB prescription.
+y <- integer(n_clusters)
+
+for(j in seq_len(n_clusters)){
+  linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
+  p_j <- plogis(linpred)
+  y[j] <- rbinom(1, size = sizes[j], prob = p_j)
+}
+
+df_sim <- data.frame(cluster = seq_len(n_clusters),
+                      arm = arm_assign,
+                      size = sizes,
+                      y = y)
+df_sim
+
+# Plot: histogram of cluster sizes
+mean_sizes <- df_sim %>%
+  group_by(arm) %>%
+  summarise(mean_size = mean(size))
+
+ggplot(df_sim, aes(x = factor(cluster), y = size, fill = factor(arm))) +
+  geom_bar(stat = "identity", color = "black") +
+  geom_hline(data = mean_sizes, aes(yintercept = mean_size, color = factor(arm)),
+             linetype = "dashed", size = 1, show.legend = FALSE) +
+  geom_text(data = mean_sizes, aes(x = Inf, y = mean_size, label = paste0("Mean = ", round(mean_size, 1))),
+            hjust = 1.1, vjust = -0.5, color = c("skyblue4", "tomato3"), size = 4) +
+  scale_fill_manual(values = c("skyblue", "tomato"), labels = c("Control (arm=0)", "Intervention (arm=1)")) +
+  scale_color_manual(values = c("skyblue4", "tomato3")) +
+  labs(x = "Cluster", y = "Cluster Size", fill = "Treatment Group") +
+  theme_minimal() +
+  ggtitle("Cluster size per cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## **(2.3) Simulate power under varying assumptions, using cluster-level analysis ("clan")**
+
+NOTES:
+
+-   Use cluster-level analysis (unweighted t-test on log-odds, with 0.5 continuity correction, as per guidance according to Thompson & Leyrat & al -\> "clan" command), next chapter use GLMM
+
+-   Keep gamma distribution throughout
+
+-   Allow for variation in key parameters: number of clusters, mean cluster size, control proportion, intervention proportion, ICC, and random effect distribution.
+
+-   Repetitions per scenario: 1000-5000 simulated trials
+
+### **(2.3.1) Create function**
+
+```{r}
+simulate_power <- function(n_clusters = 26, 
+                           m_mean = 40, 
+                           CV = 0.1,
+                           p0 = 0.75, 
+                           p1 = 0.50, 
+                           rho = 0.20,
+                           re_dist = "gamma", 
+                           n_sim = 1000,
+                           alpha = 0.05, 
+                           seed = 20250809) {
+  set.seed(seed)
+  
+  # Compute derived parameters
+  sigma_b <- icc_to_sigma(rho)
+  beta0 <- p_to_beta0(p0)
+  OR <- p0_p1_to_OR(p0, p1)
+  beta1 <- log(OR)
+  
+  p_values <- numeric(n_sim)
+  
+  for (i in seq_len(n_sim)) {
+    u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+    sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
+    arm_assign <- sample(rep(0:1, length.out = n_clusters))
+    
+    y <- integer(n_clusters)
+    for (j in seq_len(n_clusters)) {
+      linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
+      p_j <- plogis(linpred)
+      y[j] <- rbinom(1, size = sizes[j], prob = p_j)
+    }
+    
+    # Cluster-level log-odds with 0.5 continuity correction
+    log_odds <- log((y + 0.5) / (sizes - y + 0.5))
+    
+    # Unweighted t-test
+    group0 <- log_odds[arm_assign == 0]
+    group1 <- log_odds[arm_assign == 1]
+    
+    test <- try(t.test(group1, group0, var.equal = TRUE), silent = TRUE)
+    p_values[i] <- if (inherits(test, "try-error")) NA else test$p.value
+  }
+  
+  # Estimate power
+  mean(p_values < alpha, na.rm = TRUE)
+}
+```
+
+### **(2.3.2)** Calculate baseline scenario
+
+```{r}
+power_estimate <- simulate_power(n_clusters = 26,
+                                 m_mean = 40,
+                                 CV = 0.1,
+                                 p0 = 0.75,
+                                 p1 = 0.50,
+                                 rho = 0.20,
+                                 re_dist = "gamma",
+                                 n_sim = 1000)
+
+cat("Estimated power:", round(power_estimate, 3), "\n")
+
+```
+
+### **(2.3.3) Vary effect sizes**
+
+```{r}
+#| warning: false
+p0_vals <- seq(0.50, 0.85, by = 0.05)
+p1_vals <- seq(0.30, 0.70, by = 0.05)
+
+grid <- expand.grid(p0 = p0_vals, p1 = p1_vals)
+
+results <- grid %>%
+  rowwise() %>%
+  mutate(power = simulate_power(n_clusters = 26,
+                                m_mean = 40,
+                                CV = 0.1,
+                                p0 = p0,
+                                p1 = p1,
+                                rho = 0.2,
+                                re_dist = "gamma",
+                                n_sim = 1000)) %>%
+  ungroup()
+
+# Plot
+ggplot(results, aes(x = p1, y = power, color = factor(p0))) +
+  
+  # Shaded region above 80% power
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 0.8, ymax = Inf),
+            fill = "lightgrey", alpha = 0.3, inherit.aes = FALSE) +
+  
+  # Power curves
+  geom_line(size = 1.2) +
+  geom_point() +
+  
+  # Labels and scales
+  labs(title = "Power Curves by p0 and p1 (two-arm/pair-wise comparison)",
+       x = "Intervention Group Probability (p1)",
+       y = "Estimated Power",
+       color = "Control Group (p0)") +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal(base_size = 14)
+```
+
+### **(2.3.4) Vary ICC**
+
+```{r}
+# Vector of ICC values to test
+icc_values <- seq(0.05, 0.25, by = 0.02)
+
+# Run power simulations for each ICC
+power_results <- sapply(icc_values, function(rho) {
+  simulate_power(n_clusters = 26,
+                 m_mean = 40,
+                 CV = 0.1,
+                 p0 = 0.75,
+                 p1 = 0.50,
+                 rho = rho,
+                 re_dist = "gamma",
+                 n_sim = 1000,
+                 alpha = 0.05,
+                 seed = 20250809)
+})
+
+# Create data frame for plotting
+df_power_icc <- data.frame(ICC = icc_values, Power = power_results)
+
+# Plot
+ggplot(df_power_icc, aes(x = ICC, y = Power)) +
+  geom_line(color = "darkred", size = 1.2) +
+  geom_point(color = "firebrick") +
+  labs(title = "Power Curve by ICC (two-arm/pair-wise comparison)",
+       x = "Intraclass Correlation (ICC)",
+       y = "Estimated Power") +
+  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
+                     limits = c(0.70, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal()
+
+```
+
+### **(2.3.5) Vary number of clusters**
+
+```{r}
+# Vector of cluster counts to test
+n_clusters_vec <- seq(22, 36, by = 1)
+
+# Run power simulations for each cluster count
+power_results <- sapply(n_clusters_vec, function(nc) {
+  simulate_power(n_clusters = nc,
+                 m_mean = 40,
+                 CV = 0.1,
+                 p0 = 0.75,
+                 p1 = 0.50,
+                 rho = 0.20,
+                 re_dist = "gamma",
+                 n_sim = 5000,
+                 alpha = 0.05,
+                 seed = 20250809)
+})
+
+# Create data frame for plotting
+df_power_css <- data.frame(Cluster_ss = n_clusters_vec, Power = power_results)
+
+# Plot
+ggplot(df_power_css, aes(x = Cluster_ss, y = Power)) +
+  geom_line(color = "darkgreen", size = 1.2) +
+  geom_point(color = "forestgreen") +
+  labs(title = "Power vs Number of total clusters (two-arm/pair-wise comparison)",
+       x = "Total number of clusters (two-arm trial)",
+       y = "Estimated power") +
+  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
+                     limits = c(0.70, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = seq(22, 36, by = 1)) +
+  theme_minimal()
+
+```
+
+### **(2.3.6) Vary number of individuals per cluster (mean cluster size)**
+
+```{r}
+#| warning: false
+m_mean_vec <- seq(10, 180, by = 10)
+
+# Run power simulations for each cluster count
+power_results <- sapply(m_mean_vec, function(n) {
+  simulate_power(n_clusters = 26,
+                 m_mean = n,
+                 CV = 0.1,
+                 p0 = 0.75,
+                 p1 = 0.50,
+                 rho = 0.20,
+                 re_dist = "gamma",
+                 n_sim = 1000,
+                 alpha = 0.05,
+                 seed = 20250809)
+})
+
+# Create data frame for plotting
+df_power_iss <- data.frame(Individual_ss = m_mean_vec, Power = power_results)
+
+# Plot
+ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
+  geom_line(color = "darkblue", size = 1.2) +
+  geom_point(color = "skyblue") +
+  labs(title = "Power vs Number of total individuals (two-arm/pair-wise comparison)",
+       x = "Total number of individuals (two-arm trial)",
+       y = "Estimated power") +
+  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
+                     limits = c(0.70, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = seq(10, 180, by = 10)) +
+  theme_minimal()
+
+```
+
+## **(2.4) Simulate power under varying assumptions, using GLMM**
+
+NOTES:
+
+-   As per guidance according to Thompson & Leyrat & al: GLMM with restricted pseudo-likelihood and reduced degree of freedom
+
+-   Keep gamma distribution throughout
+
+-   Allow for variation in key parameters: number of clusters, mean cluster size, control proportion, intervention proportion, ICC, and random effect distribution.
+
+-   Repetitions per scenario: 1000-5000 simulated trials
+
+### **(2.4.1) Create function**
+
+```{r}
+simulate_power_glmmPQL <- function(n_clusters = 26, 
+                                   m_mean = 40, 
+                                   CV = 0.1,
+                                   p0 = 0.75, 
+                                   p1 = 0.50, 
+                                   rho = 0.20,
+                                   re_dist = "gamma", 
+                                   n_sim = 1000,
+                                   alpha = 0.05, 
+                                   seed = 20250809) {
+  set.seed(seed)
+  
+  sigma_b <- icc_to_sigma(rho)
+  beta0 <- p_to_beta0(p0)
+  OR <- p0_p1_to_OR(p0, p1)
+  beta1 <- log(OR)
+  
+  p_values <- numeric(n_sim)
+  
+  for (i in seq_len(n_sim)) {
+    u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+    sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
+    arm_assign <- sample(rep(0:1, length.out = n_clusters))
+    
+    y <- integer(n_clusters)
+    arm <- integer(n_clusters)
+    cluster <- integer(n_clusters)
+    
+    for (j in seq_len(n_clusters)) {
+      linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
+      p_j <- plogis(linpred)
+      y[j] <- rbinom(1, size = sizes[j], prob = p_j)
+      arm[j] <- arm_assign[j]
+      cluster[j] <- j
+    }
+    
+    dd_sim <- data.frame(
+      y = y,
+      size = sizes,
+      arm = factor(arm),
+      cluster = factor(cluster)
+    )
+    
+    # Fit GLMM using glmmPQL
+    model_pql <- try(glmmPQL(
+      fixed = cbind(y, size - y) ~ arm,
+      random = ~1 | cluster,
+      family = binomial(link = "logit"),
+      data = dd_sim,
+      verbose = FALSE
+    ), silent = TRUE)
+    
+    if (!inherits(model_pql, "try-error")) {
+      df_manual <- n_clusters - length(fixef(model_pql))
+      coef <- model_pql$coefficients$fixed["arm1"]
+      se <- summary(model_pql)$tTable["arm1", "Std.Error"]
+      t_stat <- coef / se
+      p_values[i] <- 2 * pt(-abs(t_stat), df = df_manual)
+    } else {
+      p_values[i] <- NA
+    }
+  }
+  
+  mean(p_values < alpha, na.rm = TRUE)
+}
+
+```
+
+### **(2.4.2)** Calculate baseline scenario
+
+```{r}
+power_estimate <- simulate_power_glmmPQL(n_clusters = 26,
+                                         m_mean = 40,
+                                         CV = 0.1,
+                                         p0 = 0.75,
+                                         p1 = 0.50,
+                                         rho = 0.20,
+                                         re_dist = "gamma",
+                                         n_sim = 1000)
+
+cat("Estimated power (GLMM):", round(power_estimate, 3), "\n")
+```
+
+### **(2.4.3) Vary effect sizes**
+
+```{r}
+p0_vals <- seq(0.50, 0.85, by = 0.05)
+p1_vals <- seq(0.30, 0.70, by = 0.05)
+
+grid_glmm <- expand.grid(p0 = p0_vals, p1 = p1_vals)
+
+# Use map2 to apply the function to each p0/p1 pair, more efficient
+grid_glmm$power <- map2_dbl(grid_glmm$p0, grid_glmm$p1, ~ simulate_power_glmmPQL(
+  n_clusters = 26,
+  m_mean = 40,
+  CV = 0.1,
+  p0 = .x,
+  p1 = .y,
+  rho = 0.2,
+  re_dist = "gamma",
+  n_sim = 500  # reduce for speed
+))
+
+# Plot
+ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 0.8, ymax = Inf),
+            fill = "lightgrey", alpha = 0.3, inherit.aes = FALSE) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  labs(title = "Power Curves by p0 and p1 (two-arm/pair-wise comparison, GLMM)",
+       x = "Intervention Group Probability (p1)",
+       y = "Estimated Power",
+       color = "Control Group (p0)") +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal(base_size = 14)
+```
+
+### **(2.4.4) Vary ICC**
+
+```{r}
+#| warning: false
+# Vector of ICC values to test
+icc_values <- seq(0.05, 0.25, by = 0.02)
+
+# Run power simulations for each ICC
+power_results_glmm <- sapply(icc_values, function(rho) {
+  simulate_power_glmmPQL(n_clusters = 26,
+                 m_mean = 40,
+                 CV = 0.1,
+                 p0 = 0.75,
+                 p1 = 0.50,
+                 rho = rho,
+                 re_dist = "gamma",
+                 n_sim = 500,
+                 alpha = 0.05,
+                 seed = 20250809)
+})
+
+# Create data frame for plotting
+df_power_icc_glmm <- data.frame(ICC = icc_values, Power = power_results_glmm)
+
+# Plot
+ggplot(df_power_icc_glmm, aes(x = ICC, y = Power)) +
+  geom_line(color = "darkred", size = 1.2) +
+  geom_point(color = "firebrick") +
+  labs(title = "Power Curve by ICC (two-arm/pair-wise comparison, GLMM)",
+       x = "Intraclass Correlation (ICC)",
+       y = "Estimated Power") +
+  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
+                     limits = c(0.70, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal()
+
+```
+
+### **(2.4.5) Vary number of clusters**
+
+```{r}
+# Vector of cluster counts to test
+n_clusters_vec <- seq(22, 36, by = 1)
+
+# Run power simulations for each cluster count
+power_results_glmm <- sapply(n_clusters_vec, function(nc) {
+  simulate_power_glmmPQL(n_clusters = nc,
+                 m_mean = 40,
+                 CV = 0.1,
+                 p0 = 0.75,
+                 p1 = 0.50,
+                 rho = 0.20,
+                 re_dist = "gamma",
+                 n_sim = 500,
+                 alpha = 0.05,
+                 seed = 20250809)
+})
+
+# Create data frame for plotting
+df_power_css_glmm <- data.frame(Cluster_ss = n_clusters_vec, Power = power_results_glmm)
+
+# Plot
+ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
+  geom_line(color = "darkgreen", size = 1.2) +
+  geom_point(color = "forestgreen") +
+  labs(title = "Power vs Number of total clusters (two-arm/pair-wise comparison, GLMM)",
+       x = "Total number of clusters (two-arm trial)",
+       y = "Estimated power") +
+  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
+                     limits = c(0.70, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = seq(22, 36, by = 1)) +
+  theme_minimal()
+
+```
+
+## **(2.5)** 
+
+```{r}
+
+```
+
+```{r}
+# # 5) cluster-level log-odds with 0.5 continuity correction for clusters with 0 or all events
+# cluster_log_odds <- function(events, sizes){
+#   # events and sizes vectors of clusters
+#   # continuity: add 0.5 to events and non-events where needed
+#   p <- events/sizes
+#   # identify problematic clusters
+#   zero_idx <- which(events == 0)
+#   all_idx <- which(events == sizes)
+#   # apply correction only to clusters with 0 or all events
+#   events_adj <- events
+#   sizes_adj <- sizes
+#   if(length(zero_idx)>0){
+#     events_adj[zero_idx] <- events_adj[zero_idx] + 0.5
+#     sizes_adj[zero_idx] <- sizes_adj[zero_idx] + 1
+#   }
+#   if(length(all_idx)>0){
+#     events_adj[all_idx] <- events_adj[all_idx] - 0.5
+#     sizes_adj[all_idx] <- sizes_adj[all_idx] + 1
+#   }
+#   # compute log odds
+#   odds <- (events_adj) / (sizes_adj - events_adj)
+#   log_odds <- log(odds)
+#   return(log_odds)
+# }
+# 
+# # ------------------------------------------------------------------
+# # Analysis implementations
+# # Each analysis function takes a data.frame with columns: cluster, arm (0/1), events, size
+# # and returns a named list with estimate, se, z, pval, converged (TRUE/FALSE), method
+# 
+# analyze_cluster_level <- function(df, weighted = FALSE){
+#   # df has one row per cluster
+#   # compute log-odds per cluster
+#   lo <- cluster_log_odds(df$events, df$size)
+#   arm <- df$arm
+#   # simple two-sample t-test of log-odds between arms
+#   g0 <- lo[arm==0]
+#   g1 <- lo[arm==1]
+#   n0 <- length(g0); n1 <- length(g1)
+#   # unweighted: pooled or Welch? They used unweighted t-test with DF = clusters - 2
+#   if(!weighted){
+#     m0 <- mean(g0); m1 <- mean(g1)
+#     se <- sqrt(var(g0)/n0 + var(g1)/n1)
+#     est <- m1 - m0
+#     df <- n0 + n1 - 2
+#     tstat <- est / se
+#     pval <- 2 * pt(-abs(tstat), df = df)
+#     return(list(method = ifelse(weighted,"CL-W","CL-UNW"), estimate = est, se = se, pval = pval, df = df, converged = TRUE))
+#   } else {
+#     # inverse-variance weighted cluster-level effect
+#     # weight = 1 / var(log-odds estimate for cluster). Approx var(log_odds) ~= 1/(events_adj) + 1/(non-events_adj)
+#     # compute event adj like in cluster_log_odds
+#     events <- df$events; sizes <- df$size
+#     events_adj <- events; sizes_adj <- sizes
+#     zero_idx <- which(events == 0)
+#     all_idx <- which(events == sizes)
+#     if(length(zero_idx)>0){ events_adj[zero_idx] <- events_adj[zero_idx] + 0.5; sizes_adj[zero_idx] <- sizes_adj[zero_idx] + 1 }
+#     if(length(all_idx)>0){ events_adj[all_idx] <- events_adj[all_idx] - 0.5; sizes_adj[all_idx] <- sizes_adj[all_idx] + 1 }
+#     var_logodds <- 1/events_adj + 1/(sizes_adj - events_adj)
+#     w <- 1/var_logodds
+#     ests <- log(events_adj/(sizes_adj - events_adj))
+#     # compute weighted mean per arm
+#     w0 <- w[arm==0]; w1 <- w[arm==1]
+#     est0 <- sum(w0 * ests[arm==0]) / sum(w0)
+#     est1 <- sum(w1 * ests[arm==1]) / sum(w1)
+#     est <- est1 - est0
+#     # approximate SE of difference
+#     se <- sqrt(1/sum(w1) + 1/sum(w0))
+#     # t-test DF = clusters - 2 (paper)
+#     df <- length(ests) - 2
+#     tstat <- est / se
+#     pval <- 2 * pt(-abs(tstat), df = df)
+#     return(list(method = "CL-W", estimate = est, se = se, pval = pval, df = df, converged = TRUE))
+#   }
+# }
+# 
+# analyze_glmer <- function(longdf, nAGQ = 10){
+#   # longdf: one row per arm-cluster with columns cluster, arm, events, size
+#   # we expand to individual-level data for glmer's binomial with cbind successes, failures
+#   d <- data.frame(cluster = factor(longdf$cluster), arm = longdf$arm, y = longdf$events, n = longdf$size)
+#   # fit GLMM with random intercept over cluster
+#   res <- tryCatch({
+#     fit <- lme4::glmer(cbind(y, n-y) ~ arm + (1 | cluster), data = d, family = binomial(), nAGQ = nAGQ)
+#     coefs <- summary(fit)$coefficients
+#     est <- as.numeric(coefs["arm","Estimate"]) # log-odds
+#     se <- as.numeric(coefs["arm","Std. Error"])
+#     zval <- est/se
+#     pval <- 2 * pnorm(-abs(zval))
+#     return(list(method = paste0("GLMM-AQ",nAGQ), estimate = est, se = se, pval = pval, converged = TRUE, fit = fit))
+#   }, error = function(e){
+#     return(list(method = paste0("GLMM-AQ",nAGQ), estimate = NA, se = NA, pval = NA, converged = FALSE, fit = NULL))
+#   })
+#   return(res)
+# }
+# 
+# analyze_glmmPQL <- function(longdf){
+#   d <- data.frame(cluster = factor(longdf$cluster), arm = longdf$arm, y = longdf$events, n = longdf$size)
+#   # need to expand to individual-level rows? glmmPQL accepts counts via weights and a binomial family
+#   # glmmPQL usage: glmmPQL(fixed, random, family = binomial, data, ...)
+#   # fit via quasi-likelihood (PQL)
+#   res <- tryCatch({
+#     # create proportion and weights
+#     d$prop <- d$y / d$n
+#     fit <- MASS::glmmPQL(prop ~ arm, random = ~1|cluster, family = binomial, weights = n, data = d, verbose = FALSE)
+#     # extract coef estimate and SE
+#     summary_fit <- summary(fit)$tTable
+#     est <- as.numeric(summary_fit["arm","Value"]) # may be named differently if arm is factor
+#     se  <- as.numeric(summary_fit["arm","Std.Error"])
+#     tval <- est/se
+#     # compute p-value using t with df = clusters - 2 (paper used clusters-2)
+#     df <- length(unique(d$cluster)) - 2
+#     pval <- 2 * pt(-abs(tval), df = df)
+#     return(list(method = "GLMM-PQL", estimate = est, se = se, pval = pval, df = df, converged = TRUE, fit = fit))
+#   }, error = function(e){
+#     return(list(method = "GLMM-PQL", estimate = NA, se = NA, pval = NA, converged = FALSE, fit = NULL))
+#   })
+#   return(res)
+# }
+# 
+# analyze_gee <- function(longdf, corstr = "independence"){
+#   # longdf same as before; geeglm can use cbind(y, n-y) as response
+#   d <- data.frame(cluster = factor(longdf$cluster), arm = longdf$arm, y = longdf$events, n = longdf$size)
+#   res <- tryCatch({
+#     fit <- geepack::geeglm(cbind(y, n-y) ~ arm, id = cluster, family = binomial, data = d, corstr = corstr)
+#     coef_est <- summary(fit)$coefficients
+#     # geeglm summary: row for (Intercept) and arm; coef_est has columns: Estimate, Std.err, Wald, z
+#     est <- as.numeric(coef_est["arm","Estimate"])
+#     se  <- as.numeric(coef_est["arm","Std.err"])
+#     zval <- est / se
+#     pval <- 2 * pnorm(-abs(zval))
+#     # GEE small-sample corrections (KC and FG) can be applied to the sandwich var. We'll return plain one here,
+#     # and caller can apply corrections if desired.
+#     return(list(method = paste0("GEE-", corstr), estimate = est, se = se, pval = pval, converged = TRUE, fit = fit))
+#   }, error = function(e){
+#     return(list(method = paste0("GEE-", corstr), estimate = NA, se = NA, pval = NA, converged = FALSE, fit = NULL))
+#   })
+#   return(res)
+# }
+# 
+# # ------------------------------------------------------------------
+# # Single-scenario single-replicate generator + analysis wrapper
+# simulate_one_trial <- function(n_clusters, m_mean, CV, p0, OR, rho, re_dist, methods = c("CL-UNW","CL-W","GLMM-AQ10","GLMM-PQL","GEE-independence","GEE-exchangeable")){
+#   # n_clusters: total clusters, randomized 1:1 to arms
+#   # m_mean: mean cluster size
+#   # CV: coefficient of variation of cluster sizes
+#   # p0: control prevalence
+#   # OR: odds ratio for arm effect (treatment vs control). OR=1 implies null.
+#   # rho: ICC on latent logit scale
+#   # re_dist: "normal", "gamma", or "uniform"
+#   # methods: which analyses to run
+# 
+#   # random effect sd
+#   sigma_b <- icc_to_sigma(rho)
+#   # cluster-level u_j
+#   u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+#   # cluster sizes
+#   sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
+#   # assign arms alternating or random 1:1
+#   arm_assign <- rep(0:1, length.out = n_clusters)
+#   # shuffle assignment for randomness
+#   arm_assign <- sample(arm_assign, n_clusters)
+# 
+#   beta0 <- p_to_beta0(p0)
+#   beta1 <- log(OR)
+# 
+#   # per cluster, compute cluster-specific probability p_{ij}
+#   events <- integer(n_clusters)
+#   for(j in seq_len(n_clusters)){
+#     linpred_control <- beta0 + u_j[j]
+#     linpred_treated <- beta0 + beta1 + u_j[j]
+#     arm <- arm_assign[j]
+#     p_j <- plogis(ifelse(arm == 0, linpred_control, linpred_treated))
+#     # draw events
+#     events[j] <- rbinom(1, size = sizes[j], prob = p_j)
+#   }
+# 
+#   longdf <- data.frame(cluster = seq_len(n_clusters), arm = arm_assign, events = events, size = sizes)
+# 
+#   outlist <- list()
+#   # cluster-level unweighted
+#   if("CL-UNW" %in% methods) outlist[["CL-UNW"]] <- analyze_cluster_level(longdf, weighted = FALSE)
+#   if("CL-W" %in% methods) outlist[["CL-W"]] <- analyze_cluster_level(longdf, weighted = TRUE)
+#   if("GLMM-AQ10" %in% methods) outlist[["GLMM-AQ10"]] <- analyze_glmer(longdf, nAGQ = 10)
+#   if("GLMM-PQL" %in% methods) outlist[["GLMM-PQL"]] <- analyze_glmmPQL(longdf)
+#   if("GEE-independence" %in% methods) outlist[["GEE-independence"]] <- analyze_gee(longdf, corstr = "independence")
+#   if("GEE-exchangeable" %in% methods) outlist[["GEE-exchangeable"]] <- analyze_gee(longdf, corstr = "exchangeable")
+# 
+#   return(outlist)
+# }
+# 
+# # ------------------------------------------------------------------
+# # Wrapper to run many replicates for one scenario
+# run_scenario <- function(n_reps = 1000, n_clusters, m_mean, CV, p0, OR, rho, re_dist, methods){
+#   # use future.apply to parallelize replicates
+#   future::plan("multisession")
+#   res <- future.apply::future_lapply(seq_len(n_reps), function(i){
+#     simulate_one_trial(n_clusters = n_clusters, m_mean = m_mean, CV = CV, p0 = p0, OR = OR, rho = rho, re_dist = re_dist, methods = methods)
+#   }, future.seed = TRUE)
+#   # res is list of length n_reps, each element is a list of method results
+#   # we'll collate per method
+#   methods_present <- unique(unlist(lapply(res, names)))
+#   coll <- list()
+#   for(m in methods_present){
+#     ests <- sapply(res, function(x) if(!is.null(x[[m]])) x[[m]]$estimate else NA)
+#     ses  <- sapply(res, function(x) if(!is.null(x[[m]])) x[[m]]$se else NA)
+#     pvals<- sapply(res, function(x) if(!is.null(x[[m]])) x[[m]]$pval else NA)
+#     conv <- sapply(res, function(x) if(!is.null(x[[m]])) x[[m]]$converged else FALSE)
+#     coll[[m]] <- data.frame(estimate = ests, se = ses, pval = pvals, converged = conv)
+#   }
+#   future::plan("sequential")
+#   return(coll)
+# }
+# 
+# # ------------------------------------------------------------------
+# # Driver: define scenarios (matching the paper's grid)
+# n_clusters_grid <- c(8, 12, 20, 30)
+# m_mean_grid <- c(10, 50, 1000)
+# CV_grid <- c(0, 0.5, 0.8)
+# prevalence_grid <- c(0.10, 0.30)
+# icc_grid <- c(0.001, 0.01, 0.05, 0.1)
+# re_dists <- c("normal","gamma","uniform")
+# 
+# # default methods to run (reducing heavy fits when m_mean is huge)
+# default_methods <- c("CL-UNW","CL-W","GLMM-AQ10","GLMM-PQL","GEE-independence","GEE-exchangeable")
+# 
+# # whether to run full extensive simulation. This is computationally heavy: ~ many hours.
+# run_full_simulation <- FALSE
+# n_reps <- 1000 # per scenario, as in the paper
+# 
+# if(run_full_simulation){
+#   # Create an output folder
+#   out_dir <- file.path(getwd(), "crt_sim_results")
+#   if(!dir.exists(out_dir)) dir.create(out_dir)
+# 
+#   # We'll iterate scenarios but for demonstration, we may limit combinations to keep runtime manageable.
+#   scenario_grid <- expand.grid(n_clusters = n_clusters_grid,
+#                                m_mean = m_mean_grid,
+#                                CV = CV_grid,
+#                                p0 = prevalence_grid,
+#                                rho = icc_grid,
+#                                re_dist = re_dists,
+#                                stringsAsFactors = FALSE)
+# 
+#   # to avoid combinatorial explosion, you might want to filter combinations (e.g. exclude m=1000 with many reps)
+#   # For faithful replication set filter to keep all rows; here we'll keep all but warn user.
+#   cat("Total scenarios to run:", nrow(scenario_grid), "\n")
+# 
+#   # For each scenario we need an OR. The paper used an OR that gave ~80% power for many scenarios. We'll compute
+#   # a scenario-specific OR via a quick internal search that runs fewer replications (n_search replications) to find
+#   # an OR that yields ~80% power for the GLMM-AQ10 method. This is approximate but follows the paper's spirit.
+# 
+#   find_or_for_power <- function(target_power = 0.80, n_clusters, m_mean, CV, p0, rho, re_dist, method_for_power = "GLMM-AQ10", n_search = 250){
+#     # binary search over OR between 0.2 and 2.5 (treating OR < 1 as protective; we'll search >1 if p0 and desired)
+#     lo <- 0.3; hi <- 3
+#     for(it in seq_len(12)){
+#       mid <- exp((log(lo) + log(hi))/2)
+#       cat(sprintf("  power search iter %d: testing OR=%.3f\n", it, mid))
+#       coll <- run_scenario(n_reps = n_search, n_clusters = n_clusters, m_mean = m_mean, CV = CV, p0 = p0, OR = mid, rho = rho, re_dist = re_dist, methods = c(method_for_power))
+#       # extract power as proportion of converged runs with p<0.05 for this method
+#       dat <- coll[[method_for_power]]
+#       ok <- dat$converged & !is.na(dat$pval)
+#       if(sum(ok) == 0){ pow_est <- 0 } else { pow_est <- mean(dat$pval[ok] < 0.05) }
+#       cat(sprintf("    estimated power (n=%d sims): %.3f\n", sum(ok), pow_est))
+#       if(pow_est < target_power) lo <- mid else hi <- mid
+#     }
+#     return(exp((log(lo) + log(hi))/2))
+#   }
+# 
+#   # iterate scenarios; for each find OR (approx) and then run n_reps
+#   scenario_results_index <- list()
+#   scen_i <- 0
+#   for(r in seq_len(nrow(scenario_grid))){
+#     scen <- scenario_grid[r, ]
+#     scen_i <- scen_i + 1
+#     cat(sprintf("\nRunning scenario %d/%d: clusters=%d, m=%d, CV=%.2f, p0=%.2f, rho=%.4f, re_dist=%s\n",
+#                 scen_i, nrow(scenario_grid), scen$n_clusters, scen$m_mean, scen$CV, scen$p0, scen$rho, scen$re_dist))
+# 
+#     or_for_80 <- find_or_for_power(target_power = 0.80, n_clusters = scen$n_clusters, m_mean = scen$m_mean, CV = scen$CV, p0 = scen$p0, rho = scen$rho, re_dist = scen$re_dist, method_for_power = "GLMM-AQ10", n_search = 200)
+#     cat(sprintf("  selected OR ~ %.4f for approx 80%% power (GLMM-AQ10)\n", or_for_80))
+# 
+#     # Run main simulation for null (OR=1) and effect (OR=or_for_80)
+#     scen_name <- paste0("C",scen$n_clusters,"_m",scen$m_mean,"_CV",scen$CV,"_p",gsub("\\.","",as.character(scen$p0)),"_rho",gsub("\\.","",as.character(scen$rho)),"_",scen$re_dist)
+#     outfile_base <- file.path(out_dir, scen_name)
+# 
+#     # null
+#     cat("  Running null (OR=1)\n")
+#     res_null <- run_scenario(n_reps = n_reps, n_clusters = scen$n_clusters, m_mean = scen$m_mean, CV = scen$CV, p0 = scen$p0, OR = 1, rho = scen$rho, re_dist = scen$re_dist, methods = default_methods)
+#     saveRDS(res_null, paste0(outfile_base, "_null.rds"))
+#     cat("    saved to", paste0(outfile_base, "_null.rds"), "\n")
+# 
+#     # effect
+#     cat("  Running effect (OR=", format(or_for_80, digits=4), ")\n")
+#     res_eff <- run_scenario(n_reps = n_reps, n_clusters = scen$n_clusters, m_mean = scen$m_mean, CV = scen$CV, p0 = scen$p0, OR = or_for_80, rho = scen$rho, re_dist = scen$re_dist, methods = default_methods)
+#     saveRDS(res_eff, paste0(outfile_base, "_eff.rds"))
+#     cat("    saved to", paste0(outfile_base, "_eff.rds"), "\n")
+# 
+#     # optionally create a small summary table for this scenario
+#     summarize_method <- function(df){
+#       ok <- which(df$converged & !is.na(df$estimate))
+#       if(length(ok) == 0) return(data.frame(Nconv = 0, Bias = NA, EmpSD = NA, MeanSE = NA, RelBiasSE = NA, Power = NA))
+#       Nconv <- length(ok)
+#       ests <- df$estimate[ok]
+#       ses  <- df$se[ok]
+#       bias <- mean(ests) # since true beta1 known in effect case; for null true=0
+#       emp_sd <- sd(ests)
+#       mean_se <- mean(ses, na.rm=TRUE)
+#       rel_bias_se <- mean_se / emp_sd
+#       power <- mean(df$pval[ok] < 0.05, na.rm=TRUE)
+#       return(data.frame(Nconv = Nconv, Bias = bias, EmpSD = emp_sd, MeanSE = mean_se, RelBiasSE = rel_bias_se, Power = power))
+#     }
+# 
+#     # write a small csv with summaries
+#     summary_list <- lapply(names(res_null), function(mn){
+#       cbind(method = mn, scenario = scen_name, type = "null", summarize_method(res_null[[mn]]))
+#     })
+#     summary_list2 <- lapply(names(res_eff), function(mn){
+#       cbind(method = mn, scenario = scen_name, type = "effect", summarize_method(res_eff[[mn]]))
+#     })
+#     summary_tbl <- do.call(rbind, c(summary_list, summary_list2))
+#     write.csv(summary_tbl, paste0(outfile_base, "_summary.csv"), row.names = FALSE)
+#     cat("    summary saved to", paste0(outfile_base, "_summary.csv"), "\n")
+# 
+#     # lightweight memory cleanup
+#     rm(res_null, res_eff, summary_tbl)
+#     gc()
+#   }
+#   cat("All scenarios completed. Results saved under:", out_dir, "\n")
+# } else {
+#   cat("run_full_simulation is FALSE. Set it to TRUE to run the full study.\n")
+# }
+
+# Notes & caveats (in-code):
+# - The script approximates the paper's selection of OR for ~80% power via short search that uses
+#   GLMM-AQ10 with a modest number of inner simulations (n_search). This is an approximate procedure
+#   similar in spirit to what the authors did using their software.
+# - Small-sample corrections for GEE (KC, FG) are not fully implemented here — the script returns the
+#   geeglm standard sandwich-based SE. If you want KC or FG adjustments, we can add those transforms
+#   (they require cluster-level leverages and tailored formulas). The 'saws' package or manual implementations
+#   can be added on request.
+# - GLMM fits (glmer) may be slow for very large m_mean like 1000; consider using nAGQ=1 for faster runs,
+#   or run the full script on a compute server.
+# - The script writes per-scenario RDS files and CSV summaries to the "crt_sim_results" folder.
+# - To reproduce exact results in the paper, we may need to further align GLMM estimation options (SAS REPL vs
+#   R's glmmPQL) and the exact small-sample corrections used for GEE in the original
+```
