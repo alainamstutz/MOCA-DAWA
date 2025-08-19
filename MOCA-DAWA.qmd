@@ -1328,3 +1328,171 @@ generate_table <- function(results_list) {
 
 generate_table(res)
 ```
+
+# **(3) Minimization algorithm for stratified randomization**
+
+Following the method proposed in \[Xiao L, Yank V, Ma J. Algorithm for balancing both continuous and categorical covariates in randomized controlled trials. *Comput Methods Programs Biomed*. 2012;108(3):1185-1190. doi:10.1016/j.cmpb.2012.06.001\](<https://pubmed.ncbi.nlm.nih.gov/22727633/>)
+
+They propose a modified symmetric Kullback–Leibler divergence (KLD) method to balance multi-arm trials. Works the same for a CRT if cluster-level covariates. The KLD method tries to balance both arm sizes and covariates dynamically (and prospectively) as clusters are assigned, but we can also use it with (a) fixed time-point of randomization and (b) fixed arm size (e.g. 13:13:13), by setting Dn = 1 and p_Dn = 1. Enforcing such tight group-size balance while still allow minimization on covariates. In other words, it removes randomness in group totals but keeps balance across covariates =\> stratified randomization.
+
+This has two disadvantages:
+
+1.  Randomization becomes more predictable (esp. towards the end of allocation)
+2.  Strict equal group sizes may slightly reduce the algorithm’s ability to optimize covariate balance, because sometimes the “best” assignment for covariates would tip the arm sizes temporarily, esp. in case of small number of clusters.
+
+Number (1) is not a problem in our case since we randomize all at once. Number (2) is the best we can get.
+
+The method works as follows: For the (n+1)th cluster: compute the “amount of imbalance” (using KLD imbalance score) assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value. They recommend: Pk = c(0.8, 0.1, 0.1): the covariate-balance biased-coin probabilities. 80% chance of choosing the arm with the smallest imbalance, 10% chance for the second-smallest, 10% chance for the worst. If all three arms tie, then average all slots (0.8+0.1+0.1)/3 = 0.333 (simple randomization)
+
+Dn: maximum tolerated size imbalance before intervening
+
+p_Dn: probability of forcing assignment to the smallest group once that imbalance is exceeded
+
+-   if any arm is ahead by ≥1 cluster, the next cluster is forced to the smallest arm. The “numbers-balance” rule (Sec. 2.3); they introduce p_Dn to reduce predictability vs. setting it to 1, but allow either.
+
+The first 2 sequences (here 6 clusters) are allocated as a permuted block - two per arm - before using minimization. This ensures early variance estimates exist for the KLD and mirrors the recommended start.
+
+The symmetric-KLD part assumes approximate normality for continuous covariates (but they note high robustness even in case of violation)
+
+We demonstrate it on a hypothetical allocation dataset, but will eventually feed the same code with the real allocation dataset.
+
+Structure of allocation dataset:
+
+1.  cluster_id: 1-39
+2.  antibiotic_rate
+    -   Definition: patients (kids under 5?) receiving an antibiotic prescription among all (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+
+    -   Proportions ranging from 0.5-0.8
+3.  attendance_rate
+    -   Definition: All (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+
+    -   Absolute numbers, ranging from 200-1200
+4.  arm: allocation 1-3
+
+```{r}
+set.seed(20250819)
+
+# create hypothetical allocation dataset
+n_clusters <- 39
+cluster_data <- data.frame(
+  cluster_id = 1:n_clusters,
+  antibiotic_rate = runif(n_clusters, 0.5, 0.8),
+  attendance_rate = sample(200:1200, n_clusters, TRUE)
+)
+print(cluster_data)
+
+# Parameters for minimization
+n_arms <- 3
+Dn <- 1
+p_Dn <- 1
+Pk <- c(0.8, 0.1, 0.1)
+
+## Symmetric KLD for continuous covariates
+# the mean-difference term scaled by inverse variances plus a variance-term, summed over covariates, with the 0.5 factor (Eq. (1), continuous part). A tiny eps stabilizes near-zero variances.
+symKLD <- function(Xi, Xj, eps = 1e-8) {
+  # Xi, Xj : matrices with columns = continuous covariates
+  mu_i <- colMeans(Xi)
+  mu_j <- colMeans(Xj)
+  v_i  <- apply(Xi, 2, var)
+  v_j  <- apply(Xj, 2, var)
+  # stabilize in case of near-constant covariate within an arm
+  v_i  <- pmax(v_i, eps)
+  v_j  <- pmax(v_j, eps)
+  term_mu  <- ((mu_i - mu_j)^2) * (1 / v_i + 1 / v_j)
+  term_var <- (v_i + v_j) * (1 / v_i + 1 / v_j) - 2
+  # 0.5 * sum over covariates
+  0.5 * sum(term_mu + term_var)
+}
+
+## Multi-arm extension and “what-if” evaluation (Sec. 2.1–2.4)
+# For the (n+1)th cluster: compute the “amount of imbalance” assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value (Algorithm Step 4; di construction extended to T > 2 arms). The function pretends to assign the cluster to arm g and sums the pairwise KLDs across all unordered arm pairs under that hypothetical allocation. Terms not affected by the placement cancel in comparisons, so minimizing this total is equivalent to minimizing the paper’s di ranking.
+total_imbalance_if <- function(alloc, covars, idx, g, n_arms) {
+  tmp <- alloc
+  tmp[idx] <- g
+  # collect per-arm covariate matrices
+  arm_X <- lapply(1:n_arms, function(a) covars[tmp == a, , drop = FALSE])
+  # sum symmetric KLD over all unordered arm pairs i<j
+  D <- 0
+  for (i in 1:(n_arms - 1)) {
+    for (j in (i + 1):n_arms) {
+      # ensure at least 2 obs per arm to compute variances robustly -> assign first 2 below manually
+      if (nrow(arm_X[[i]]) >= 2 && nrow(arm_X[[j]]) >= 2) {
+        D <- D + symKLD(arm_X[[i]], arm_X[[j]])
+      } else {
+        # If very early and an arm has <2, give a mild penalty to discourage that choice
+        D <- D + 1e6
+      }
+    }
+  }
+  D
+}
+
+## convert imbalance vector d_i to assignment probabilities with proper tie-averaging
+# smaller di ⇒ larger probability; if multiple arms tie, average the corresponding P_k positions so tied arms receive the same probability (Sec. 2.2). Normalizing ensures a proper probability vector.
+probs_from_di <- function(di, Pk) {
+  K <- length(di)
+  o <- order(di)# ranks by increasing imbalance
+  probs <- numeric(K)
+  pos <- 1
+  for (tie in split(o, di[o])) {
+    k <- length(tie)
+    # slots for this tie = pos...(pos+k-1)
+    probs[tie] <- mean(Pk[pos:(pos + k - 1)])
+    pos <- pos + k
+  }
+  # normalize, just in case rounding makes probs not sum exactly to 1
+  probs / sum(probs)
+}
+
+## main randomization
+alloc <- rep(NA, n_clusters)
+
+## Start with permuted block (first 2T = 6 clusters: 2 per arm)
+init_ids <- sample(1:n_clusters, 2 * n_arms)
+alloc[init_ids] <- rep(1:n_arms, each=2)
+
+## MAIN LOOP
+alloc <- alloc # keep whatever is already initialized (first 2T=6 assigned)
+covars_mat <- as.matrix(cluster_data[, c("antibiotic_rate", "attendance_rate")])
+remaining <- setdiff(1:n_clusters, which(!is.na(alloc)))
+
+for (cl in remaining) {
+  # current group-size imbalance
+  group_sizes <- tabulate(factor(alloc, levels = 1:n_arms), nbins = n_arms)
+  max_diff <- max(group_sizes) - min(group_sizes)
+
+  if (max_diff >= Dn) {
+    min_group <- which.min(group_sizes)
+    if (runif(1) < p_Dn) {
+      alloc[cl] <- min_group
+      next
+    }
+  }
+
+  # Compute D_i (hypothetical imbalances) for assigning this cluster to each arm
+  di <- sapply(1:n_arms, function(g) total_imbalance_if(alloc, covars_mat, cl, g, n_arms))
+
+  # Translate to assignment probabilities with tie-averaging -> Pk probabilities
+  prob_vec <- probs_from_di(di, Pk)
+
+  # Safety fallback
+  # If for some reason prob_vec is invalid (all zeros, or has NA), then the algorithm falls back to equal randomization (1/3 each)
+  if (all(prob_vec == 0) || any(is.na(prob_vec))) {
+    prob_vec <- rep(1/n_arms, n_arms)
+  }
+
+  # Assign cluster using these probabilities
+  # This is the actual biased-coin randomization step; chooses one of the arms 1, 2, 3, according to prob_vec
+  alloc[cl] <- sample.int(n_arms, size = 1, prob = prob_vec)
+
+}
+
+# attach & quick sanity checks
+cluster_data$arm <- alloc
+print(table(cluster_data$arm))
+print(aggregate(cluster_data[, c("antibiotic_rate", "attendance_rate")],
+                by = list(arm = cluster_data$arm), mean))
+
+print(cluster_data)
+
+```
