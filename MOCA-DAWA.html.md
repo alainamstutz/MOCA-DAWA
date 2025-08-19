@@ -1893,7 +1893,7 @@ This has two disadvantages:
 
 Number (1) is not a problem in our case since we randomize all at once. Number (2) is the best we can get.
 
-The methods works as follows: For the (n+1)th cluster: compute the “amount of imbalance” (using KLD imbalance score) assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value. They recommend: Pk = c(0.8, 0.1, 0.1): the covariate-balance biased-coin probabilities. 80% chance of choosing the arm with the smallest imbalance, 10% chance for the second-smallest, 10% chance for the worst. If all three arms tie, then average all slots (0.8+0.1+0.1)/3 = 0.333 (simple randomization)
+The method works as follows: For the (n+1)th cluster: compute the “amount of imbalance” (using KLD imbalance score) assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value. They recommend: Pk = c(0.8, 0.1, 0.1): the covariate-balance biased-coin probabilities. 80% chance of choosing the arm with the smallest imbalance, 10% chance for the second-smallest, 10% chance for the worst. If all three arms tie, then average all slots (0.8+0.1+0.1)/3 = 0.333 (simple randomization)
 
 Dn: maximum tolerated size imbalance before intervening
 
@@ -1935,7 +1935,7 @@ cluster_data <- data.frame(
   antibiotic_rate = runif(n_clusters, 0.5, 0.8),
   attendance_rate = sample(200:1200, n_clusters, TRUE)
 )
-cluster_data
+print(cluster_data)
 ```
 
 ::: {.cell-output .cell-output-stdout}
@@ -2121,6 +2121,58 @@ print(aggregate(cluster_data[, c("antibiotic_rate", "attendance_rate")],
 1   1       0.6418908        658.7692
 2   2       0.6498293        693.1538
 3   3       0.6374738        672.6923
+```
+
+
+:::
+
+```{.r .cell-code}
+print(cluster_data)
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+   cluster_id antibiotic_rate attendance_rate arm
+1           1       0.6173125             533   1
+2           2       0.6304244            1076   2
+3           3       0.5150153             541   3
+4           4       0.7276955             278   2
+5           5       0.7452254            1076   1
+6           6       0.7378640             535   3
+7           7       0.7115594             547   1
+8           8       0.6405941             966   2
+9           9       0.7841681             368   2
+10         10       0.5291556             268   3
+11         11       0.7334082             795   3
+12         12       0.5156217             704   1
+13         13       0.6200529             335   1
+14         14       0.6365683             554   1
+15         15       0.6066676             605   2
+16         16       0.6133166            1185   3
+17         17       0.7587916            1146   1
+18         18       0.6094127             796   2
+19         19       0.7109073             599   2
+20         20       0.5998237             502   2
+21         21       0.6539247            1196   1
+22         22       0.5748613             223   3
+23         23       0.5084525             245   1
+24         24       0.6161377             218   2
+25         25       0.6465858             509   3
+26         26       0.6413965             794   3
+27         27       0.5326989             766   3
+28         28       0.6556890            1192   3
+29         29       0.5377449             443   1
+30         30       0.7431526             636   2
+31         31       0.7417508             678   1
+32         32       0.6732451             677   2
+33         33       0.7058265             364   3
+34         34       0.7825231             307   1
+35         35       0.5637464            1126   2
+36         36       0.7680282             992   3
+37         37       0.5418061            1164   2
+38         38       0.5150526             800   1
+39         39       0.6333140             581   3
 ```
 
 
