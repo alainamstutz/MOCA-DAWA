@@ -13,7 +13,7 @@ format:
 editor: visual
 ---
 
-# DAWA cluster randomized trial (CRT)
+# **DAWA cluster randomized trial (CRT)**
 
 Interventions on the level of health care workers at health facilities (dispensaries) in Zanzibar to reduce antibiotic prescriptions. Multi-arm with 2 interventions:
 
@@ -23,7 +23,7 @@ Interventions on the level of health care workers at health facilities (dispensa
 
 -   **Intervention 2**: eHealth tool (CDSS & nudging) + AMR stewardship clubs
 
-## Parameters and design considerations
+## **Parameters and design considerations**
 
 -   Eligible participants: Patients attending the dispensary with acute infectious illness
 
@@ -100,7 +100,7 @@ install_if_missing(req_pkgs)
 set.seed(20250809)
 ```
 
-## Corresponding individual randomized trial
+## **Corresponding individual randomized trial**
 
 Sample size for the individual randomized trial on the same question
 
@@ -138,7 +138,7 @@ cat("Total sample size (3-arm trial):", n_total)
 
 A reduction of at least 25% percentage points (the smaller delta of the two) represents a Cohen's h of \>0.5 =\> medium to large effect
 
-# **(1) Standard sample size calculation CRT**
+# **(1) Sample size calculation CRT: formula-based**
 
 Add the design effect (DEFF) to the individual RCT sample size. The usual standard DEFF formula:
 
@@ -366,7 +366,7 @@ ggplot(results_df, aes(x = ICC, y = n_individuals_per_arm * 3)) +
   scale_y_continuous(breaks = seq(0, max(results_df$n_individuals_per_arm * 3), by = 100))
 ```
 
-# **(2) Simulations**
+# **(2) Sample size calculation CRT: Simulations**
 
 ## **(2.1) Parameters**
 
@@ -799,8 +799,6 @@ ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
 
 -   Keep gamma distribution throughout
 
--   Repetitions per scenario: 500-1000 simulated trials
-
 ### **(2.4.1) Create function**
 
 ```{r}
@@ -905,7 +903,7 @@ grid_glmm$power <- map2_dbl(grid_glmm$p0, grid_glmm$p1, ~ simulate_power_glmmPQL
   p1 = .y,
   rho = 0.2,
   re_dist = "gamma",
-  n_sim = 500 # reduced for speed
+  n_sim = 300 # reduced for speed
 ))
 
 ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
@@ -937,7 +935,7 @@ power_results_glmm <- sapply(icc_values, function(rho) {
                  p1 = 0.50,
                  rho = rho,
                  re_dist = "gamma",
-                 n_sim = 700, # reduced for speed
+                 n_sim = 300, # reduced for speed
                  alpha = 0.05,
                  seed = 20250809)
 })
@@ -971,7 +969,7 @@ power_results_glmm <- sapply(n_clusters_vec, function(nc) {
                  p1 = 0.50,
                  rho = 0.20,
                  re_dist = "gamma",
-                 n_sim = 700, # reduced for speed
+                 n_sim = 300, # reduced for speed
                  alpha = 0.05,
                  seed = 20250809)
 })
@@ -992,348 +990,9 @@ ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
 
 ```
 
-## **(2.5) Simulate scenario with baseline control rate**
+# **(3) Simulate the full dataset and implement the main analysis strategy**
 
-**Notes:**
-
--   Use GLMM with PQL, keep gamma, and all other assumptions/parameters
-
--   New parameters:
-
-    -   gamma0 (average baseline rate)
-
-    -   alpha (correlation strength with u_j)
-
-        -   E.g. a value of 0.3 means 30% of the variation in the baseline logit is driven by u_j, while the remaining comes from independent measurement noise. In other words, higher alpha means tighter coupling between baseline_rate and the true cluster tendency.
-
-    -   tau (measurement noise SD on logit scale)
-
-        -   0.25 ensures that even clusters with the same u_j will show some variability in their observed baseline_rate
-
--   Alpha 0.6 with tau 0.55 represents a moderate correlation, ca. 50% of the between-cluster variation explained by baseline value
-
--   Include other stratification variables?
-
-### **(2.5.1) Create functions and simulate one dataset**
-
-```{r}
-#| warning: false
-n_clusters <- 26
-m_mean <- 40
-CV <- 0.1
-p0 <- 0.75
-p1 <- 0.50
-OR <- p0_p1_to_OR(p0, p1)
-rho <- 0.20
-re_dist <- "gamma"
-gamma0 <- qlogis(0.75) # average baseline rate ~40%
-alpha <- 0.6 # correlation strength with u_j
-tau <- 0.55 # measurement noise SD on logit scale
-
-# Simulation; simulate outcome counts using the same u_j (so baseline explains part of u_j)
-set.seed(20250809)
-sigma_b <- icc_to_sigma(rho)
-u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
-sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-arm_assign <- sample(rep(0:1, length.out = n_clusters))
-beta0 <- p_to_beta0(p0)
-beta1 <- log(OR)
-
-eps <- rnorm(n_clusters, mean = 0, sd = tau)
-logit_b <- gamma0 + alpha * u_j + eps
-baseline_rate <- plogis(logit_b)
-
-y <- integer(n_clusters)
-
-for(j in seq_len(n_clusters)){
-  linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
-  p_j <- plogis(linpred)
-  y[j] <- rbinom(1, size = sizes[j], prob = p_j)
-}
-
-df_sim <- data.frame(cluster = seq_len(n_clusters),
-                      arm = arm_assign,
-                      size = sizes,
-                      y = y,
-                      baseline_rate = baseline_rate)
-df_sim
-
-# Fit GLMMs with PQL: unadjusted vs adjusted for baseline
-mod_unadj <- glmmPQL(fixed = cbind(y, size - y) ~ arm,
-                     random = ~1 | cluster,
-                     family = binomial(link = "logit"),
-                     data = df_sim,
-                     verbose = FALSE)
-mod_adj <- glmmPQL(fixed = cbind(y, size - y) ~ arm + baseline_rate,
-                     random = ~1 | cluster,
-                     family = binomial(link = "logit"),
-                     data = df_sim,
-                     verbose = FALSE)
-
-generate_pql_results_table <- function(model_pql, data, name = c("adjusted")) {
-  # Manually calculate and adjust degrees of freedom as per guidance above
-  n_clusters <- length(unique(data$cluster))
-  n_fixed_params <- length(fixef(model_pql))
-  df_manual <- n_clusters - n_fixed_params
-
-  treatment_coef <- model_pql$coefficients$fixed["arm"]
-  treatment_se <- summary(model_pql)$tTable["arm", "Std.Error"]
-
-  t_stat <- treatment_coef / treatment_se
-  p_value <- 2 * pt(-abs(t_stat), df = df_manual)
-  t_critical <- qt(0.975, df = df_manual)
-  ci_lower_log <- treatment_coef - t_critical * treatment_se
-  ci_upper_log <- treatment_coef + t_critical * treatment_se
-
-  # Combine results into a tibble
-  results_table <- tibble(
-    Method = name,
-    Estimate = round(c(treatment_coef), 3),
-    OR = round(exp(c(treatment_coef)), 2),
-    CI_Lower = round(exp(c(ci_lower_log)), 2),
-    CI_Upper = round(exp(c(ci_upper_log)), 2),
-    p_value = c(p_value)
-  ) %>%
-    mutate(
-      p_value = ifelse(p_value < 0.001, "<0.001", sprintf("%.3f", p_value))
-    )
-
-  # Display as a Quarto-friendly table
-  return(
-    results_table %>%
-      kable("pipe", col.names = c("Method", "Estimate (log-odds)", "Odds Ratio", "95% CI Lower", "95% CI Upper", "p-value")) %>%
-      kable_styling(full_width = FALSE)
-  )
-}
-
-generate_pql_results_table(mod_unadj, df_sim, "GLMM pseudolikelihood, adapted DF, unadjusted")
-generate_pql_results_table(mod_adj, df_sim, "GLMM pseudolikelihood, adapted DF, adjusted")
-
-# marginal standardization using marginaleffects package
-rr_mod_unadj <- avg_comparisons(
-  mod_unadj,
-  variables = "arm",
-  type = "response",
-  comparison = "ratio"
-)
-rr_mod_unadj
-rr_mod_adj <- avg_comparisons(
-  mod_adj,
-  variables = "arm",
-  type = "response",
-  comparison = "ratio"
-)
-rr_mod_adj
-
-# indivdata <- dataset %>%
-#   rowwise() %>%
-#   do({
-#     data.frame(cluster = .$cluster,
-#                arm = .$arm,
-#                y = c(rep(1, .$events), rep(0, .$size - .$events)))
-#   })
-# 
-# glmer(y ~ arm + (1|cluster), family = binomial, data = indivdata)
-```
-
-### **(2.5.2) Simulate power and estimates with full model, adjusted and unadjusted**
-
-```{r}
-simulate_one_trial_GLMMpql <- function(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                                   alpha, tau, gamma0, adjust_baseline = FALSE){
-  sigma_b <- icc_to_sigma(rho)
-  u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
-  sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-  arm_assign <- sample(rep(0:1, length.out = n_clusters))
-  beta0 <- p_to_beta0(p0)
-  beta1 <- log(OR)
-  eps <- rnorm(n_clusters, mean = 0, sd = tau)
-  logit_b <- gamma0 + alpha * u_j + eps
-  baseline_rate <- plogis(logit_b)
-  y <- integer(n_clusters)
-  for(j in seq_len(n_clusters)){
-    linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
-    p_j <- plogis(linpred)
-    y[j] <- rbinom(1, size = sizes[j], prob = p_j)
-  }
-
-  dd_sim <- data.frame(cluster = factor(seq_len(n_clusters)),
-                       arm = factor(arm_assign),
-                       y = y,
-                       size = sizes,
-                       baseline_rate = baseline_rate)
-
-  # Fit glmmPQL
-  if(adjust_baseline){
-    form <- cbind(y, size - y) ~ arm + baseline_rate
-  } else {
-    form <- cbind(y, size - y) ~ arm
-  }
-
-  model_pql <- try(glmmPQL(
-    fixed = form,
-    random = ~1 | cluster,
-    family = binomial(link = "logit"),
-    data = dd_sim,
-    verbose = FALSE
-  ), silent = TRUE)
-
-  if (inherits(model_pql, "try-error")) {
-    return(list(pval = NA_real_, OR = NA_real_, RR = NA_real_))
-  } else {
-    # Manual adaptation of DF
-    df_manual <- n_clusters - length(fixef(model_pql))
-    coef_arm <- if("arm1" %in% names(fixef(model_pql))) {
-      model_pql$coefficients$fixed["arm1"]
-    } else {
-      model_pql$coefficients$fixed["arm"]
-    }
-    se_arm <- summary(model_pql)$tTable[grep("^arm", rownames(summary(model_pql)$tTable)), "Std.Error"][1]
-    t_stat <- coef_arm / se_arm
-    p_val <- 2 * pt(-abs(t_stat), df = df_manual)
-
-    OR_est <- exp(coef_arm)
-
-    # Risk ratio via marginal standardization using the marginaleffects package
-    RR_model <- tryCatch({
-      avg_comparisons(model_pql, variables = "arm", type = "response", comparison = "ratio")
-    }, error = function(e) NA_real_)
-    rr <- RR_model$estimate[1]
-    rr_cl <- RR_model$conf.low[1]
-    rr_ch <- RR_model$conf.high[1]
-    
-    return(list(pval = p_val, OR = OR_est, RR = rr, RR_CI_low = rr_cl, RR_CI_high = rr_ch))
-  }
-}
-
-# Simulation
-run_simulation_pql <- function(n_reps = 5, 
-                               n_clusters = 26, 
-                               m_mean = 40, 
-                               CV = 0.1,
-                               p0 = 0.75, 
-                               p1 = 0.50, 
-                               rho = 0.20, 
-                               re_dist = "gamma",
-                               alpha = 0.6, 
-                               tau = 0.55, 
-                               gamma0 = qlogis(0.75),
-                               parallel = TRUE, 
-                               seed = 20250809){
-  set.seed(seed)
-  
-  OR <- p0_p1_to_OR(p0, p1)
-
-  run_batch <- function(adjust){
-    replicate(n_reps, simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                                             alpha, tau, gamma0, adjust_baseline = adjust),
-              simplify = FALSE)
-  }
-
-  if(parallel){
-    future::plan("multisession")
-    results_unadj <- future_lapply(seq_len(n_reps), function(i){
-      simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                             alpha, tau, gamma0, adjust_baseline = FALSE)
-    }, future.seed = TRUE)
-    results_adj <- future_lapply(seq_len(n_reps), function(i){
-      simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                             alpha, tau, gamma0, adjust_baseline = TRUE)
-    }, future.seed = TRUE)
-    future::plan("sequential")
-  } else {
-    results_unadj <- run_batch(FALSE)
-    results_adj <- run_batch(TRUE)
-  }
-
-  extract_summary <- function(results){
-    pvals <- sapply(results, function(x) x$pval)
-    ORs <- sapply(results, function(x) x$OR)
-    RRs <- sapply(results, function(x) x$RR)
-    RRs_CI_low <- sapply(results, function(x) x$RR_CI_low)
-    RRs_CI_high <- sapply(results, function(x) x$RR_CI_high)
-    list(
-      power = mean(pvals < 0.05, na.rm = TRUE),
-      mean_OR = mean(ORs, na.rm = TRUE),
-      mean_RR = mean(RRs, na.rm = TRUE),
-      mean_RR_cl = mean(RRs_CI_low, na.rm = TRUE),
-      mean_RR_ch = mean(RRs_CI_high, na.rm = TRUE),
-      nconv = sum(!is.na(pvals))
-    )
-  }
-
-  list(
-    unadj = extract_summary(results_unadj),
-    adj = extract_summary(results_adj)
-  )
-}
-
-# Run simulation
-res <- run_simulation_pql(
-  n_reps = 100,
-  n_clusters = 26,
-  m_mean = 40,
-  CV = 0.1,
-  p0 = 0.75,
-  p1 = 0.50,
-  rho = 0.20,
-  re_dist = "gamma",
-  alpha = 0.6,
-  tau = 0.55,
-  gamma0 = qlogis(0.75),
-  parallel = TRUE
-)
-
-generate_table <- function(results_list) {
-  
-  unadj_results <- results_list$unadj
-  adj_results <- results_list$adj
-  
-  # Create a tibble for the metrics
-  results_data <- tibble(
-    Metric = c("Power", "Mean OR", "Mean RR", "Mean RR CI Lower", "Mean RR CI Upper", "Converged Runs"),
-    Unadjusted = c(
-      unadj_results$power,
-      unadj_results$mean_OR,
-      unadj_results$mean_RR,
-      unadj_results$mean_RR_cl,
-      unadj_results$mean_RR_ch,
-      unadj_results$nconv
-    ),
-    Adjusted = c(
-      adj_results$power,
-      adj_results$mean_OR,
-      adj_results$mean_RR,
-      adj_results$mean_RR_cl,
-      adj_results$mean_RR_ch,
-      adj_results$nconv
-    )
-  )
-  
-  # Format the table for Quarto with kable and kableExtra
-  formatted_table <- results_data %>%
-    mutate(
-      across(where(is.numeric), ~ sprintf("%.3f", .x))
-    ) %>%
-    kable(
-      "html",
-      caption = "Simulation results (n=1000)",
-      col.names = c("Metric", "Unadjusted Model", "Adjusted Model")
-    ) %>%
-    kable_styling(
-      bootstrap_options = "striped",
-      full_width = FALSE
-    )
-  
-  return(formatted_table)
-}
-
-generate_table(res)
-```
-
-# **(3) Simulate the full dataset and the main analysis strategy**
-
-Implement the main analysis strategy as per SAP:
+**The main analysis strategy as per SAP:**
 
 -   Due to the relatively low number of clusters in each pair-wise comparison (n=\<30), we use a generalized linear mixed model (GLMM) with restricted pseudo-likelihood estimation and small-sample correction for degrees of freedom (clusters minus cluster-level parameters), as suggested by Thompson and colleagues(ref)
 
@@ -1345,12 +1004,34 @@ Implement the main analysis strategy as per SAP:
 
 -   We will report the resulting treatment-effect (beta-1), which is the log-odds difference between intervention and control or – when exponentiated – the adjusted odds ratio, with its 95% confidence interval. This represents a relative cluster-specific effect, conditional on all included covariates. In addition, we will use marginal standardization and report the resulting population-average marginal relative risk and risk difference with their 95% confidence intervals
 
-## **(3.1) Simulate 1 dataset and the analysis pipeline step-by-step**
+**Notes on simulating a realistic dataset:**
+
+-   Reuse the helper functions from chapter 2.2, incl. conservative gamma distribution for u_j
+
+-   Causal structure:
+
+    -   Cluster latent effect (u_j) influences both, baseline AB prescription rate (through alpha, the correlation strength between baseline and u_j) and attendance rate (through att_corr_target) and directly affects the outcome via the cluster random effect
+
+    -   Baseline AB prescription rate directly affects the outcome (via beta_baseline), representing residual correlation beyond the shared cluster effect alpha
+
+    -   Attendance rate directly affects the outcome (via beta_att), representing residual correlation beyond the shared cluster effect att_corr_target
+
+    -   =\> baseline_rate and attendance both directly push the outcome (via beta_baseline and beta_att) and share correlation with u_j (i.e., indirectly push the outcome)
+
+    -   =\> all of the above in the sense of: "Larger clusters (=higher attendance rate) -\> higher AB prescription rate at endline" and "Clusters with higher AB prescription rate at baseline -\> higher prescription rate at endline"
+
+    -   Treatment (arm 1) directly affects the outcome (through beta_1), but correlation above and noise below masking it
+
+-   Add some baseline noise (e.g. tau = 0.45) ensuring that even clusters with the same u_j will show some variability in their observed baseline_rate
+
+-   alpha (correlation baseline_rate with u_j): e.g. a value of 0.3 means 30% of the variation in the baseline logit is driven by u_j (i.e. drives true cluster tendency or the "cluster-to-cluster variation" at baseline, which also has an impact on the outcome), while the remaining comes from independent measurement noise.
+
+-   Produce an individual-level dataset, not cluster-level only - as the real-life dataset will look like and in case we also want to add individual-level correlations
+
+## **(3.1) Simulate one dataset and check some diagnostics**
 
 ```{r}
-set.seed(20250809)
-
-## Helper functions (see chapter 2.2)
+## We use the helper functions from chapter 2.2
 
 # icc_to_sigma
 # generate_u
@@ -1358,173 +1039,223 @@ set.seed(20250809)
 # p_to_beta0
 # p0_p1_to_OR
 
-## Simulation parameters
+## General parameters
+set.seed(20250809)
 n_clusters <- 26
 m_mean <- 40
 CV <- 0.1
 p0 <- 0.75
 p1 <- 0.50
-rho <- 0.2
-re_dist <- "gamma"
-alpha <- 0.6 # correlation strength with u_j
-tau <- 0.55 # measurement noise SD on logit scale
-gamma0 <- qlogis(p0) # average baseline AB prescription rate
+OR <- p0_p1_to_OR(p0, p1)
+rho <- 0.20 # ICC (on latent logit scale)
+re_dist <- "gamma" # distribution for u_j, keep it conservative
 
-## Generate cluster-level random effects and covariates
-sigma_b <- icc_to_sigma(rho)
-u_j <- generate_u(n_clusters, sigma_b, dist=re_dist)
+# Individual-level covariates
+age_mean <- 35
+age_sd <- 12
+sex_prob <- 0.48
+
+## Generate cluster structure
 sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-arm_assign <- sample(rep(0:1, length.out=n_clusters))
-beta0 <- p_to_beta0(p0)
-beta1 <- log(p0_p1_to_OR(p0, p1))
-eps <- rnorm(n_clusters, 0, tau)
-# baseline AB prescription rate, correlated, so that higher rate at baseline then also higher AB prescription rate at endline
-logit_b <- gamma0 + alpha * u_j + eps 
-baseline_rate <- plogis(logit_b)
-# attendance rate, correlated, so that higher attendance rate at baseline (i.e. larger clusters) have higher AB prescription rate at endline
-attendance_rate <- round(pmax(200, pmin(1200, 500 + 300 * u_j + rnorm(n_clusters, 0, 50))))
-# islands, 30% Pemba, 70% Unguja
-island <- factor(rbinom(n_clusters, 1, 0.3), labels=c("Pemba","Unguja"))
+sigma_b <- icc_to_sigma(rho)
+u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+arm_assign <- sample(rep(0:1, length.out = n_clusters))
 
-## Generate individual-level data
-dd_list <- vector("list", n_clusters)
-for (j in seq_len(n_clusters)) {
-  n_j <- sizes[j]
-  sex <- factor(rbinom(n_j, 1, 0.5), labels=c("female","male"))
-  age <- rnorm(n_j, 45, 15)
-  linpred <- qlogis(baseline_rate[j]) - 0.5*arm_assign[j] + u_j[j]
-  p_ij <- plogis(linpred)
-  y_ij <- rbinom(n_j, 1, p_ij)
+# First important thing to mimic: AB prescription rate at baseline
+# alpha controls how much the baseline rate depends on the same latent cluster effect
+# The bigger alpha, the more high-baseline clusters will also tend to have high endline outcomes indirectly, because u_j is reused in the outcome model => indirect correlation
+# Baseline AB prescription rate is explained by u_j + random noise eps + global average level gamma0.
+gamma0 <- qlogis(p0) # the average cluster-level log-odds of baseline antibiotic prescription
+alpha <- 0.3 # how much baseline (logit) depends on u_j (i.e. the latent cluster effect); 0 would be no correlation (0-1)
+tau <- 0.45 # the residual variation (SD) in baseline log-odds not explained by u_j, i.e. the random measurement noise
+eps <- rnorm(n_clusters, 0, tau)
+logit_b <- gamma0 + alpha * u_j + eps # putting it all together
+baseline_rate <- plogis(logit_b) # map back to probability scale
+
+# Second important thing to mimic: Attendance rate at baseline (see prelim data Nina)
+# Easier, since it’s approximately normally distributed (per year is large enough)
+# attendance = mean + (signal) + (noise)
+mean_att_year <- 7786
+sd_att_year   <- 3967
+att_corr_target <- 0.2 # weak to moderate positive correlation between the latent cluster effect and attendance, so high-prescribers (positive u_j) will tend to be at higher attendance clinics.
+
+sd_uj <- sd(u_j)
+att_u_coef <- att_corr_target * sd_att_year / sd_uj # the signal. for each +1 SD in u_j, attendance increases by ~1,760 patients per year.
+sd_att_noise <- sqrt(sd_att_year^2 * (1 - att_corr_target^2)) # rest is noise
+attendance_year_raw <- mean_att_year + att_u_coef * u_j +
+                       rnorm(n_clusters, 0, sd_att_noise)
+attendance_year <- pmax(0, round(attendance_year_raw))
+attendance_month <- attendance_year / 12
+
+# Third, the island: uncorrelated binary covariate
+island <- rbinom(n_clusters, 1, 0.5)
+
+## Fixed effects on outcome, direct correlations on outcome
+beta0 <- p_to_beta0(p0) # intercept
+beta1 <- log(OR) # intervention effect
+beta_baseline <- 0.5 # how strongly the baseline rate predicts the endline outcome, independent of u_j
+beta_island <- 0.0 # no correlation
+beta_att_per1000 <- 0.02 # how strongly attendance affects the outcome, independent of u_j (per 1000 pats/y)
+beta_att <- beta_att_per1000 / 1000
+beta0_adj <- beta0 - 1.0 # after including u_j, baseline_rate, attendance, etc., the overall mean outcome probability can drift because of the nonlinear logistic function. Stabilize.
+
+
+## Simulate individual-level data
+ind_list <- vector("list", length = n_clusters)
+for(j in seq_len(n_clusters)){
+  nj <- sizes[j]
+  age_j <- rnorm(nj, mean = age_mean, sd = age_sd) # draw from normal
+  sex_j <- rbinom(nj, 1, prob = sex_prob) # draw from bernoulli
   
-  dd_list[[j]] <- data.frame(
-    cluster = factor(j),
-    arm = factor(arm_assign[j]),
-    y = y_ij,
-    sex = sex,
-    age = age,
-    attendance_rate = attendance_rate[j],
+  logit_baseline_j <- qlogis(baseline_rate[j]) # back to logit
+  # the log-odds of antibiotic prescription for all individuals in cluster j (same cluster-level predictors for all)
+  linpred_j <- beta0_adj +
+               beta1 * arm_assign[j] +
+               beta_baseline * logit_baseline_j +
+               beta_att * attendance_year[j] +
+               beta_island * island[j] +
+               u_j[j] # latent cluster random effect
+  
+  p_ij <- plogis(linpred_j) # Predicted probability of receiving an antibiotic for each individual in cluster j. Since all individuals in a cluster share the same cluster-level covariates, p_ij is identical for everyone in the cluster (unless we later include individual-level predictors...)
+  y_ij <- rbinom(nj, 1, p_ij) # the outcome; bernoulli with probability p_ij
+  
+  # save data for this one cluster
+  ind_list[[j]] <- data.frame(
+    cluster = j,
+    arm = arm_assign[j],
+    age = age_j,
+    sex = sex_j,
+    attendance_year = attendance_year[j],
+    attendance_month = attendance_month[j],
+    island = island[j],
     baseline_rate = baseline_rate[j],
-    island = island[j]
+    u_j = u_j[j],
+    p = p_ij,
+    y = y_ij
   )
 }
+df_ind <- do.call(rbind, ind_list)
 
-dd_sim <- bind_rows(dd_list)
+## Cluster-level summary, aggregate at cluster-level
+df_cluster <- aggregate(y ~ cluster + arm, data = df_ind, sum) # aggregate number of outcomes
+df_cluster$size <- aggregate(y ~ cluster, data = df_ind, length)$y # count number of ind => cluster size
+cluster_meta <- data.frame(
+  cluster = seq_len(n_clusters),
+  arm = arm_assign,
+  attendance_year = attendance_year,
+  attendance_month = attendance_month,
+  island = island,
+  baseline_rate = baseline_rate,
+  u_j = u_j
+)
+df_sim <- merge(df_cluster, cluster_meta, by = c("cluster","arm"))
+df_sim <- df_sim[order(df_sim$cluster),
+                 c("cluster","arm","size","y","baseline_rate",
+                   "attendance_year","attendance_month",
+                   "island","u_j")]
 
+## Diagnostics
+cat("Attendance (year): mean =", mean(attendance_year),
+    "SD =", sd(attendance_year),
+    "CV =", round(sd(attendance_year)/mean(attendance_year),2), "\n")
+cat("Target corr (attendance,u_j) =", att_corr_target,
+    "Observed corr =", round(cor(attendance_year, u_j),2), "\n")
+cat("Mean baseline_rate =", round(mean(baseline_rate),3), "\n")
+cat("Beta_att (per 1000 patients/year) =", beta_att_per1000,
+    "=> clinic with 1000 more patients/year has OR =", round(exp(beta_att_per1000),3), " of prescribing antibiotics\n\n")
+cat("First few cluster-level rows:\n")
+print(head(df_sim, 10))
+cat("First few individual-level rows:\n")
+print(head(df_ind, 50))
+cat("\nOverall N =", sum(df_sim$size), "individuals across", n_clusters, "clusters\n")
+
+# Compute mean prescription rate per arm
+arm_rates <- aggregate(y ~ arm, data = df_ind, mean)
+arm_rates$y <- round(arm_rates$y, 3)
+for(i in seq_len(nrow(arm_rates))){
+  cat("Arm", arm_rates$arm[i], "observed prescription rate:", arm_rates$y[i], "\n")
+}
+
+invisible(list(individual = df_ind, cluster = df_sim)) # prevents automatic printing to console
+```
+
+## **(3.2) The analysis approach, step-by-step**
+
+```{r}
 ## Precompute spline basis for age and convert to numeric
-age_spline <- as.data.frame(ns(dd_sim$age, knots = quantile(dd_sim$age, probs=c(0.1,0.5,0.9))))
+age_spline <- as.data.frame(ns(df_ind$age, knots = quantile(df_ind$age, probs=c(0.1,0.5,0.9))))
 colnames(age_spline) <- paste0("age_spline", seq_len(ncol(age_spline)))
 age_spline[] <- lapply(age_spline, as.numeric)
-dd_sim <- cbind(dd_sim, age_spline)
+df_ind <- cbind(df_ind, age_spline)
 
 ## Ensure factor levels
-dd_sim$arm <- factor(dd_sim$arm, levels = c(0,1)) # 0 = control, 1 = intervention
-dd_sim$sex <- factor(dd_sim$sex, levels = c("female","male"))
-dd_sim$island <- factor(dd_sim$island, levels = c("Unguja","Pemba"))
+df_ind$arm <- factor(df_ind$arm, levels = c(0,1)) # 0 = control, 1 = intervention
+df_ind$sex <- factor(df_ind$sex, levels = c(0,1)) # 0 = male, 1 = female
+df_ind$island <- factor(df_ind$island, levels = c(0,1)) # 0 = "Unguja", 1 = "Pemba"
 
 ## Fit GLMM (fully adjusted)
-spline_cols <- colnames(dd_sim)[grepl("^age_spline", colnames(dd_sim))]
+spline_cols <- colnames(df_ind)[grepl("^age_spline", colnames(df_ind))]
 form <- as.formula(
-  paste("y ~ arm + baseline_rate + attendance_rate + island + sex +",
+  paste("y ~ arm + baseline_rate + attendance_year + island + sex +",
         paste(spline_cols, collapse=" + "))
 )
 model_pql <- glmmPQL(
   fixed = form,
   random = ~1 | cluster,
   family = binomial(link="logit"),
-  data = dd_sim,
+  data = df_ind,
   verbose = FALSE
 )
 summary(model_pql)
 
 ### Now, let's make a few comparisons
-## 1. Naive input OR and CI
-naive_OR <- (p1/(1-p1)) / (p0/(1-p0))
-naive_logOR <- log(naive_OR)
-# approximate 95% CI assuming simple binomial variance
-se_logOR <- sqrt(1/(p1*(m_mean)) + 1/((1-p1)*(m_mean)) + 
-                 1/(p0*(m_mean)) + 1/((1-p0)*(m_mean)))
-naive_CI <- exp(c(naive_logOR - 1.96*se_logOR, naive_logOR + 1.96*se_logOR))
-
-## 2. Raw observed OR
-raw_data <- dd_sim %>%
-  group_by(arm) %>%
-  summarise(p_hat = mean(y))
-
-raw_OR <- (raw_data$p_hat[raw_data$arm==1] / (1-raw_data$p_hat[raw_data$arm==1])) /
-          (raw_data$p_hat[raw_data$arm==0] / (1-raw_data$p_hat[raw_data$arm==0]))
-# approximate CI for raw OR using log method
-raw_n1 <- sum(dd_sim$arm==1)
-raw_n0 <- sum(dd_sim$arm==0)
-raw_logOR <- log(raw_OR)
-se_raw_logOR <- sqrt(1/(raw_data$p_hat[2]*raw_n1) + 1/((1-raw_data$p_hat[2])*raw_n1) +
-                     1/(raw_data$p_hat[1]*raw_n0) + 1/((1-raw_data$p_hat[1])*raw_n0))
-raw_CI <- exp(c(raw_logOR - 1.96*se_raw_logOR, raw_logOR + 1.96*se_raw_logOR))
-
-## 3. Model-based, but unadjusted OR
+## 1. Unadjusted OR
 form_unadj <- y ~ arm
 model_unadj <- glmmPQL(
   fixed = form_unadj,
   random = ~1|cluster,
   family = binomial(link="logit"),
-  data = dd_sim,
+  data = df_ind,
   verbose = FALSE
 )
 coef_name_unadj <- grep("^arm", names(fixef(model_unadj)), value=TRUE)
 coef_arm_unadj <- fixef(model_unadj)[coef_name_unadj]
 se_arm_unadj <- summary(model_unadj)$tTable[coef_name_unadj,"Std.Error"]
-df_unadj <- length(unique(dd_sim$cluster)) - length(fixef(model_unadj))
+df_unadj <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
 t_stat_unadj <- coef_arm_unadj / se_arm_unadj
 p_val_unadj <- 2 * pt(-abs(t_stat_unadj), df=df_unadj) # small sample correction
 OR_unadj <- exp(coef_arm_unadj)
 CI_unadj <- exp(coef_arm_unadj + c(-1,1)*qt(0.975, df=df_unadj)*se_arm_unadj)
 
-## 4. OR adjusted for stratification variables only
-form_strata <- y ~ arm + baseline_rate + attendance_rate + island
+## 2. Adjusted for stratification variables only
+form_strata <- y ~ arm + baseline_rate + attendance_year + island
 model_strata <- glmmPQL(
   fixed = form_strata,
   random = ~1|cluster,
   family = binomial(link="logit"),
-  data = dd_sim,
+  data = df_ind,
   verbose = FALSE
 )
 coef_name_strata <- grep("^arm", names(fixef(model_strata)), value=TRUE)
 coef_arm_strata <- fixef(model_strata)[coef_name_strata]
 se_arm_strata <- summary(model_strata)$tTable[coef_name_strata,"Std.Error"]
-df_strata <- length(unique(dd_sim$cluster)) - length(fixef(model_strata))
+df_strata <- length(unique(df_ind$cluster)) - length(fixef(model_strata))
 t_stat_strata <- coef_arm_strata / se_arm_strata
 p_val_strata <- 2 * pt(-abs(t_stat_strata), df=df_strata) # small sample correction
 OR_strata <- exp(coef_arm_strata)
 CI_strata <- exp(coef_arm_strata + c(-1,1)*qt(0.975, df=df_strata)*se_arm_strata)
 
-## 5. Fully adjusted OR, but age as continuous/linear
-form_full2 <- y ~ arm + baseline_rate + attendance_rate + island + sex + age
-model_full2 <- glmmPQL(
-  fixed = form_full2,
-  random = ~1|cluster,
-  family = binomial(link="logit"),
-  data = dd_sim,
-  verbose = FALSE
-)
-coef_name_full2 <- grep("^arm", names(fixef(model_full2)), value=TRUE)
-coef_arm_full2 <- fixef(model_full2)[coef_name_full2]
-se_arm_full2 <- summary(model_full2)$tTable[coef_name_full2,"Std.Error"]
-df_full2 <- length(unique(dd_sim$cluster)) - length(fixef(model_full2))
-t_stat_full2 <- coef_arm_full2 / se_arm_full2
-p_val_full2 <- 2 * pt(-abs(t_stat_full2), df=df_full2) # small sample correction
-OR_full2 <- exp(coef_arm_full2)
-CI_full2 <- exp(coef_arm_full2 + c(-1,1)*qt(0.975, df=df_full2)*se_arm_full2)
-
-## 6. Fully adjusted OR, age as spline (see main model above)
+## 3. Fully adjusted, age as spline (see main model above)
 coef_name_full <- grep("^arm", names(fixef(model_pql)), value=TRUE)
 coef_arm_full <- fixef(model_pql)[coef_name_full]
 se_arm_full <- summary(model_pql)$tTable[coef_name_full,"Std.Error"]
-df_full <- length(unique(dd_sim$cluster)) - length(fixef(model_pql))
+df_full <- length(unique(df_ind$cluster)) - length(fixef(model_pql))
 t_stat_full <- coef_arm_full / se_arm_full
 p_val_full <- 2 * pt(-abs(t_stat_full), df=df_full) # small sample correction
 OR_full <- exp(coef_arm_full)
 CI_full <- exp(coef_arm_full + c(-1,1)*qt(0.975, df=df_full)*se_arm_full)
 
-## 7. RR for main model
+## 4. And finally, calculate RR for the main model, using marginal standardization
 RR_model <- tryCatch({
   avg_comparisons(model_pql, variables="arm", type="response", comparison="ratio")
 }, error=function(e) NULL)
@@ -1537,298 +1268,251 @@ if(!is.null(RR_model)){
   rr <- rr_cl <- rr_ch <- NA_real_
 }
 
-## 8. Combine into table
+## Combine it all into a table
 results_table <- data.frame(
-  Metric = c("Naive OR", "Raw observed OR", "OR unadjusted", "OR adjusted for strat only", "OR fully adjusted, age lin", "OR fully adjusted, age spline"),
-  OR = c(sprintf("%.3f", naive_OR),
-         sprintf("%.3f", raw_OR),
-         sprintf("%.3f", OR_unadj),
+  Metric = c("Unadjusted", "Adjusted for strat only", "Fully adjusted; age spline"),
+  OR = c(sprintf("%.3f", OR_unadj),
          sprintf("%.3f", OR_strata),
-         sprintf("%.3f", OR_full2),
          sprintf("%.3f", OR_full)),
-  CI_lower = c(sprintf("%.3f", naive_CI[1]),
-               sprintf("%.3f", raw_CI[1]),
-               sprintf("%.3f", CI_unadj[1]),
+  CI_lower = c(sprintf("%.3f", CI_unadj[1]),
                sprintf("%.3f", CI_strata[1]),
-               sprintf("%.3f", CI_full2[1]),
                sprintf("%.3f", CI_full[1])),
-  CI_upper = c(sprintf("%.3f", naive_CI[2]),
-               sprintf("%.3f", raw_CI[2]),
-               sprintf("%.3f", CI_unadj[2]),
+  CI_upper = c(sprintf("%.3f", CI_unadj[2]),
                sprintf("%.3f", CI_strata[2]),
-               sprintf("%.3f", CI_full2[2]),
                sprintf("%.3f", CI_full[2])),
-  t_based_p_value = c(NA, NA, sprintf("%.3f", p_val_unadj), sprintf("%.3f", p_val_strata), sprintf("%.3f", p_val_full2), sprintf("%.3f", p_val_full)),
-  RR = c(NA, NA, NA, NA, NA, sprintf("%.3f", rr)),
-  RR_CI_lower = c(NA, NA, NA, NA, NA, sprintf("%.3f", rr_cl)),
-  RR_CI_upper = c(NA, NA, NA, NA, NA, sprintf("%.3f", rr_ch))
+  t_based_p_value = c(sprintf("%.3f", p_val_unadj), sprintf("%.3f", p_val_strata), sprintf("%.3f", p_val_full)),
+  RR = c(NA, NA, sprintf("%.3f", rr)),
+  RR_CI_lower = c(NA, NA, sprintf("%.3f", rr_cl)),
+  RR_CI_upper = c(NA, NA, sprintf("%.3f", rr_ch))
 )
 
 results_table %>%
   kable("html", caption="Intervention effect: OR and RR with 95% CI (single simulation)") %>%
-  kable_styling(bootstrap_options="striped", full_width=FALSE) %>%
-  add_footnote("p-values are only provided for model-based ORs", notation="none")
+  kable_styling(bootstrap_options="striped", full_width=FALSE)
 
 ```
 
-## **(3.2) Simulate the power with the final model**
+CAVE: This is 1 randomly simulated dataset.
+
+Due to correlation structure the adjustment for stratification factors increases power and precision. The further adjustment for individual-level covariates does not change much, makes sense, since there is no built-in correlation at that level in the simulation structure.
+
+RR only constructed for primary model (fully adjusted model)
+
+## **(3.3) Put all together and simulate the power**
+
+1000 simulations, based on dataset simulation (Chapter 3.1) and primary analysis model (Chapter 3.2)
 
 ```{r}
-library(MASS)
-library(nlme)
-library(marginaleffects)
-library(splines)
-library(dplyr)
-library(future)
-library(future.apply)
-library(kableExtra)
-library(knitr)
+simulate_crt <- function(
+  n_clusters = 26,
+  m_mean = 40,
+  CV = 0.1,
+  p0 = 0.75,
+  p1 = 0.50,
+  rho = 0.2,
+  re_dist = "gamma",
+  alpha = 0.3, # weak-moderate correlation between u_j and baseline AB prescription rate
+  tau = 0.45, # SD of baseline noise
+  mean_att_year = 7786,
+  sd_att_year = 3967,
+  att_corr_target = 0.2, # weak-moderate correlation between u_j and attendance rate
+  beta_baseline = 0.2, # weak-moderate pos correlation: baseline AB rate -> outcome, independent of u_j
+  beta_att_per1000 = 0.02, # weak-moderate pos correlation: attendance rate -> outcome, independent of u_j
+  age_mean = 35,
+  age_sd = 12,
+  sex_prob = 0.48
+){
 
-# -------------------------------
-# Helper functions (see chapter 2.2)
-# -------------------------------
-
-# icc_to_sigma
-# generate_u
-# generate_cluster_sizes
-# p_to_beta0
-# p0_p1_to_OR
-
-# -------------------------------
-# One trial simulation
-# -------------------------------
-simulate_one_trial_GLMMpql <- function(
-  n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-  alpha, tau, gamma0,
-  adjust_strata = FALSE,
-  adjust_full = FALSE) {
-  
-  sigma_b <- icc_to_sigma(rho)
-  u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
-  sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-  arm_assign <- sample(rep(0:1, length.out = n_clusters))
+  # (1) Compute OR and intercept
+  OR <- p0_p1_to_OR(p0, p1)
   beta0 <- p_to_beta0(p0)
   beta1 <- log(OR)
+  beta_att <- beta_att_per1000 / 1000
+  beta0_adj <- beta0 - 1.0
+  
+  # (2) Generate clusters
+  sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
+  sigma_b <- icc_to_sigma(rho)
+  u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
+  arm_assign <- sample(rep(0:1, length.out = n_clusters))
+  
+  # (3) Baseline AB prescription rate
   eps <- rnorm(n_clusters, 0, tau)
-  
-  # Cluster-level covariates correlated with outcome
-  logit_b <- gamma0 + alpha * u_j + eps
+  logit_b <- qlogis(p0) + alpha * u_j + eps
   baseline_rate <- plogis(logit_b)
-  attendance_rate <- plogis(0.5 * u_j + rnorm(n_clusters, 0, 0.1))
   
-  # Individual-level data
-  dd_list <- vector("list", n_clusters)
-  for (j in seq_len(n_clusters)) {
-    n_j <- sizes[j]
-    sex <- rbinom(n_j, 1, 0.5)
-    age <- rnorm(n_j, 45, 15)
-    linpred <- beta0 + beta1 * arm_assign[j] + u_j[j]
-    p_ij <- plogis(linpred)
-    y_ij <- rbinom(n_j, 1, p_ij)
+  # (4) Attendance
+  sd_uj <- sd(u_j)
+  att_u_coef <- att_corr_target * sd_att_year / sd_uj
+  sd_att_noise <- sqrt(sd_att_year^2 * (1 - att_corr_target^2))
+  attendance_year_raw <- mean_att_year + att_u_coef * u_j +
+                         rnorm(n_clusters, 0, sd_att_noise)
+  attendance_year <- pmax(0, round(attendance_year_raw))
+  attendance_month <- attendance_year / 12
+  
+  # (5) Island
+  island <- rbinom(n_clusters, 1, 0.5)
+  
+  # (6) Individual-level simulation
+  ind_list <- vector("list", length = n_clusters)
+  for(j in seq_len(n_clusters)){
+    nj <- sizes[j]
+    age_j <- rnorm(nj, mean = age_mean, sd = age_sd)
+    sex_j <- rbinom(nj, 1, sex_prob)
+    logit_baseline_j <- qlogis(baseline_rate[j])
     
-    dd_list[[j]] <- data.frame(
-      cluster = factor(j),
-      arm = factor(arm_assign[j]),
-      y = y_ij,
-      sex = factor(sex, labels = c("female","male")),
-      age = age,
-      attendance_rate = attendance_rate[j],
-      baseline_rate = baseline_rate[j]
+    linpred_j <- beta0_adj +
+                 beta1 * arm_assign[j] +
+                 beta_baseline * logit_baseline_j +
+                 beta_att * attendance_year[j] +
+                 u_j[j] +
+                 beta_island * island[j]
+    
+    p_ij <- plogis(linpred_j)
+    y_ij <- rbinom(nj, 1, p_ij)
+    
+    ind_list[[j]] <- data.frame(
+      cluster = j,
+      arm = arm_assign[j],
+      age = age_j,
+      sex = sex_j,
+      attendance_year = attendance_year[j],
+      attendance_month = attendance_month[j],
+      island = island[j],
+      baseline_rate = baseline_rate[j],
+      u_j = u_j[j],
+      p = p_ij,
+      y = y_ij
     )
   }
   
-  dd_sim <- bind_rows(dd_list)
+  df_ind <- do.call(rbind, ind_list)
   
-  # Model formula
-  if(adjust_full){
-    form <- y ~ arm + baseline_rate + attendance_rate + sex +
-      ns(age, knots = quantile(age, probs=c(0.1,0.5,0.9)))
-  } else if(adjust_strata){
-    form <- y ~ arm + baseline_rate + attendance_rate
-  } else {
-    form <- y ~ arm
-  }
-  
-  # Fit GLMM
-  model_pql <- try(
-    glmmPQL(
-      fixed = form,
-      random = ~1 | cluster,
-      family = binomial(link = "logit"),
-      data = dd_sim,
-      verbose = FALSE
-    ), silent = TRUE
+  # (7) Cluster-level summary
+  df_cluster <- aggregate(y ~ cluster + arm, data = df_ind, sum)
+  df_cluster$size <- aggregate(y ~ cluster, data = df_ind, length)$y
+  cluster_meta <- data.frame(
+    cluster = seq_len(n_clusters),
+    arm = arm_assign,
+    attendance_year = attendance_year,
+    attendance_month = attendance_month,
+    island = island,
+    baseline_rate = baseline_rate,
+    u_j = u_j
   )
-  
-  if(inherits(model_pql, "try-error")){
-    return(list(pval=NA_real_, OR=NA_real_, RR=NA_real_))
-  } else {
-    df_manual <- n_clusters - length(fixef(model_pql))
-    coef_arm <- if("arm1" %in% names(fixef(model_pql))) model_pql$coefficients$fixed["arm1"]
-                 else model_pql$coefficients$fixed["arm"]
-    se_arm <- summary(model_pql)$tTable[grep("^arm", rownames(summary(model_pql)$tTable)), "Std.Error"][1]
-    t_stat <- coef_arm / se_arm
-    p_val <- 2 * pt(-abs(t_stat), df = df_manual)
-    OR_est <- exp(coef_arm)
-    
-    RR_model <- tryCatch({
-  avg_comparisons(model_pql, variables = "arm", type = "response", comparison = "ratio")
-      }, error = function(e) NULL)
-    
-    if(is.null(RR_model)){
-      rr <- NA_real_
-      rr_cl <- NA_real_
-      rr_ch <- NA_real_
-      } else {
-        rr <- RR_model$estimate[1]
-        rr_cl <- RR_model$conf.low[1]
-        rr_ch <- RR_model$conf.high[1]
-        }
-    
-    return(list(pval=p_val, OR=OR_est, RR=rr, RR_CI_low=rr_cl, RR_CI_high=rr_ch))
-  }
-}
-
-# -------------------------------
-# Run simulation
-# -------------------------------
-run_simulation_pql <- function(
-  n_reps=5, n_clusters=26, m_mean=40, CV=0.1,
-  p0=0.75, p1=0.50, rho=0.2, re_dist="gamma",
-  alpha=0.6, tau=0.55, gamma0=qlogis(0.75),
-  parallel=TRUE, seed=20250809) {
-  
-  set.seed(seed)
-  OR <- p0_p1_to_OR(p0, p1)
-  
-  run_batch <- function(adjust_strata=FALSE, adjust_full=FALSE){
-    replicate(n_reps, simulate_one_trial_GLMMpql(
-      n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-      alpha, tau, gamma0,
-      adjust_strata=adjust_strata, adjust_full=adjust_full
-    ), simplify=FALSE)
-  }
-  
-  if(parallel){
-    future::plan("multisession")
-    results_unadj <- future_lapply(seq_len(n_reps), function(i){
-      simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                                 alpha, tau, gamma0, adjust_strata=FALSE, adjust_full=FALSE)
-    }, future.seed=TRUE)
-    
-    results_strata <- future_lapply(seq_len(n_reps), function(i){
-      simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                                 alpha, tau, gamma0, adjust_strata=TRUE, adjust_full=FALSE)
-    }, future.seed=TRUE)
-    
-    results_full <- future_lapply(seq_len(n_reps), function(i){
-      simulate_one_trial_GLMMpql(n_clusters, m_mean, CV, p0, OR, rho, re_dist,
-                                 alpha, tau, gamma0, adjust_strata=TRUE, adjust_full=TRUE)
-    }, future.seed=TRUE)
-    future::plan("sequential")
-  } else {
-    results_unadj <- run_batch(FALSE,FALSE)
-    results_strata <- run_batch(TRUE,FALSE)
-    results_full <- run_batch(TRUE,TRUE)
-  }
-  
-  extract_summary <- function(results) {
-  pvals <- sapply(results, function(x) x$pval)
-  
-  # Track which simulations converged (glmmPQL fit succeeded)
-  converged <- sapply(results, function(x) !is.na(x$pval))
-  
-  # OR only for converged
-  ORs <- sapply(results, function(x) x$OR)
-  
-  # RR only for converged and non-NA
-  RRs <- sapply(results, function(x) x$RR)
-  RRs_valid <- RRs[!is.na(RRs)]
-  
-  # CI bounds only for valid RRs
-  RR_cl <- sapply(results, function(x) x$RR_CI_low)
-  RR_ch <- sapply(results, function(x) x$RR_CI_high)
-  RR_cl_valid <- RR_cl[!is.na(RRs)]
-  RR_ch_valid <- RR_ch[!is.na(RRs)]
-  
-  list(
-    power = mean(pvals < 0.05, na.rm = TRUE),
-    mean_OR = mean(ORs[converged], na.rm = TRUE),
-    mean_RR = mean(RRs_valid[converged], na.rm = TRUE),
-    mean_RR_cl = mean(RR_cl_valid[converged], na.rm = TRUE),
-    mean_RR_ch = mean(RR_ch_valid[converged], na.rm = TRUE),
-    nconv = sum(converged),
-    prop_RR_NA = mean(is.na(RRs))
-  )
-  }
+  df_sim <- merge(df_cluster, cluster_meta, by = c("cluster","arm"))
+  df_sim <- df_sim[order(df_sim$cluster),
+                   c("cluster","arm","size","y","baseline_rate",
+                     "attendance_year","attendance_month",
+                     "island","u_j")]
   
   return(list(
-    Unadjusted = extract_summary(results_unadj),
-    Stratification_Adjusted = extract_summary(results_strata),
-    Fully_Adjusted = extract_summary(results_full)
+    individual = df_ind,
+    cluster = df_sim
   ))
-  
 }
 
-# -------------------------------
-# Table generation
-# -------------------------------
-generate_table <- function(results_list){
-  tbl_data <- tibble(
-  Metric = c("Power", "Mean OR", "Mean RR", "Mean RR CI Lower", "Mean RR CI Upper",
-             "Converged Runs", "Prop RR NA"),
-  Unadjusted = c(results_list$Unadjusted$power,
-                 results_list$Unadjusted$mean_OR,
-                 results_list$Unadjusted$mean_RR,
-                 results_list$Unadjusted$mean_RR_cl,
-                 results_list$Unadjusted$mean_RR_ch,
-                 results_list$Unadjusted$nconv,
-                 results_list$Unadjusted$prop_RR_NA),
-  Stratification_Adjusted = c(results_list$Stratification_Adjusted$power,
-                              results_list$Stratification_Adjusted$mean_OR,
-                              results_list$Stratification_Adjusted$mean_RR,
-                              results_list$Stratification_Adjusted$mean_RR_cl,
-                              results_list$Stratification_Adjusted$mean_RR_ch,
-                              results_list$Stratification_Adjusted$nconv,
-                              results_list$Stratification_Adjusted$prop_RR_NA),
-  Fully_Adjusted = c(results_list$Fully_Adjusted$power,
-                     results_list$Fully_Adjusted$mean_OR,
-                     results_list$Fully_Adjusted$mean_RR,
-                     results_list$Fully_Adjusted$mean_RR_cl,
-                     results_list$Fully_Adjusted$mean_RR_ch,
-                     results_list$Fully_Adjusted$nconv,
-                     results_list$Fully_Adjusted$prop_RR_NA)
+# Default simulation
+# sim_data <- simulate_crt()
+# df_ind <- sim_data$individual
+# df_cluster <- sim_data$cluster
+
+# Number of simulations
+n_sims <- 1000
+set.seed(20250809)
+
+# Storage
+results <- data.frame(
+  sim = 1:n_sims,
+  unadj_signif = NA,
+  adj_signif = NA,
+  beta_unadj = NA,
+  beta_adj = NA,
+  results$OR_unadj <- NA,
+  results$OR_unadj_lower <- NA,
+  results$OR_unadj_upper <- NA,
+  results$OR_adj <- NA,
+  results$OR_adj_lower <- NA,
+  results$OR_adj_upper <- NA
 )
+
+for(i in seq_len(n_sims)){
   
-  formatted_table <- tbl_data %>%
-    mutate(across(where(is.numeric), ~sprintf("%.3f", .x))) %>%
-    kable("html", caption="Simulation results (n reps)",
-          col.names=c("Metric","Unadjusted","Stratification Adjusted","Fully Adjusted")) %>%
-    kable_styling(bootstrap_options="striped", full_width=FALSE)
+  # (1) Simulate trial
+  sim_data <- simulate_crt()
+  df_ind <- sim_data$individual
   
-  return(formatted_table)
+  # (2) Prepare age spline
+  age_spline <- as.data.frame(ns(df_ind$age, 
+                                 knots = quantile(df_ind$age, probs=c(0.1,0.5,0.9))))
+  colnames(age_spline) <- paste0("age_spline", seq_len(ncol(age_spline)))
+  df_ind <- cbind(df_ind, age_spline)
+  
+  # (3) Ensure factors
+  df_ind$arm <- factor(df_ind$arm, levels = c(0,1))
+  df_ind$sex <- factor(df_ind$sex, levels = c(0,1))
+  df_ind$island <- factor(df_ind$island, levels = c(0,1))
+  
+  # (4) Unadjusted model
+  model_unadj <- glmmPQL(
+    fixed = y ~ arm,
+    random = ~1 | cluster,
+    family = binomial(link="logit"),
+    data = df_ind,
+    verbose = FALSE
+  )
+  beta1_unadj <- fixef(model_unadj)["arm1"]
+  se1_unadj   <- summary(model_unadj)$tTable["arm1","Std.Error"]
+  t1 <- beta1_unadj / se1_unadj
+  df1 <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
+  pval_unadj <- 2 * pt(-abs(t1), df=df1)
+  
+  # (5) Fully adjusted model
+  spline_cols <- colnames(df_ind)[grepl("^age_spline", colnames(df_ind))]
+  form <- as.formula(
+    paste("y ~ arm + baseline_rate + attendance_year + island + sex +",
+          paste(spline_cols, collapse=" + "))
+  )
+  model_adj <- glmmPQL(
+    fixed = form,
+    random = ~1 | cluster,
+    family = binomial(link="logit"),
+    data = df_ind,
+    verbose = FALSE
+  )
+  beta1_adj <- fixef(model_adj)["arm1"]
+  se1_adj   <- summary(model_adj)$tTable["arm1","Std.Error"]
+  t_adj <- beta1_adj / se1_adj
+  df_adj <- length(unique(df_ind$cluster)) - length(fixef(model_adj))
+  pval_adj <- 2 * pt(-abs(t_adj), df=df_adj)
+  
+  # (6) Save results including OR and CI
+  df1 <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
+  tval <- qt(0.975, df=df1)
+  results$OR_unadj[i] <- exp(beta1_unadj)
+  results$OR_unadj_lower[i] <- exp(beta1_unadj - tval * se1_unadj)
+  results$OR_unadj_upper[i] <- exp(beta1_unadj + tval * se1_unadj)
+  
+  df_adj <- length(unique(df_ind$cluster)) - length(fixef(model_adj))
+  tval_adj <- qt(0.975, df=df_adj)
+  results$OR_adj[i] <- exp(beta1_adj)
+  results$OR_adj_lower[i] <- exp(beta1_adj - tval_adj * se1_adj)
+  results$OR_adj_upper[i] <- exp(beta1_adj + tval_adj * se1_adj)
+  
+  results$unadj_signif[i] <- (pval_unadj < 0.05)
+  results$adj_signif[i]   <- (pval_adj < 0.05)
 }
 
-# -------------------------------
-# Example run
-# -------------------------------
-res <- run_simulation_pql(
-  n_reps=10,
-  n_clusters=26,
-  m_mean=40,
-  CV=0.1,
-  p0=0.75,
-  p1=0.50,
-  rho=0.20,
-  re_dist="gamma",
-  alpha=0.6,
-  tau=0.55,
-  gamma0=qlogis(0.75),
-  parallel=TRUE,
-  seed = 20250809
-)
+# (7) Compute estimated power
+power_unadj <- mean(results$unadj_signif)
+power_adj <- mean(results$adj_signif)
 
-generate_table(res)
+cat("Estimated power (unadjusted)  =", round(power_unadj,4), "\n")
+cat("Estimated power (fully adjusted) =", round(power_adj,4), "\n")
+
+# Summary of ORs
+summary(results[,c("OR_unadj","OR_unadj_lower","OR_unadj_upper",
+                   "OR_adj","OR_adj_lower","OR_adj_upper")])
 
 ```
 
