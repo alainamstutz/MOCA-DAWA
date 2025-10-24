@@ -1547,26 +1547,27 @@ Structure of allocation dataset:
 
 1.  cluster_id: 1-39
 2.  antibiotic_rate
-    -   Definition: patients (kids under 5?) receiving an antibiotic prescription among all (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?
 
-    -   Proportions ranging from 0.5-0.8
+    -   Proportion, ranging from 0.44-0.87
 3.  attendance_rate
-    -   Definition: All (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+    -   All patients presenting at the participating cluster, per month, mean over past year
 
-    -   Absolute numbers, ranging from 200-1200
+    -   Absolute count, ranging from 200-2000
 4.  island
     -   Pemba vs Unguja
+    -   30:70
 5.  arm: allocation 1-3
 
 ```{r}
-set.seed(20250813)
+set.seed(20250820)
 
 # create hypothetical allocation dataset
 n_clusters <- 39
 cluster_data <- data.frame(
   cluster_id = 1:n_clusters,
-  antibiotic_rate = runif(n_clusters, 0.5, 0.8),
-  attendance_rate = sample(200:1200, n_clusters, TRUE),
+  antibiotic_rate = runif(n_clusters, 0.44, 0.87),
+  attendance_rate = sample(200:2000, n_clusters, TRUE),
   island = factor(ifelse(rbinom(n_clusters, 1, prob = 0.3) == 1, "Pemba", "Unguja"))
 )
 print(cluster_data)

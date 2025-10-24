@@ -2278,29 +2278,30 @@ Structure of allocation dataset:
 
 1.  cluster_id: 1-39
 2.  antibiotic_rate
-    -   Definition: patients (kids under 5?) receiving an antibiotic prescription among all (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?
 
-    -   Proportions ranging from 0.5-0.8
+    -   Proportion, ranging from 0.44-0.87
 3.  attendance_rate
-    -   Definition: All (kids under 5?) presenting at the participating dispensary=cluster. Mean over past year?
+    -   All patients presenting at the participating cluster, per month, mean over past year
 
-    -   Absolute numbers, ranging from 200-1200
+    -   Absolute count, ranging from 200-2000
 4.  island
     -   Pemba vs Unguja
+    -   30:70
 5.  arm: allocation 1-3
 
 
 ::: {.cell}
 
 ```{.r .cell-code}
-set.seed(20250813)
+set.seed(20250820)
 
 # create hypothetical allocation dataset
 n_clusters <- 39
 cluster_data <- data.frame(
   cluster_id = 1:n_clusters,
-  antibiotic_rate = runif(n_clusters, 0.5, 0.8),
-  attendance_rate = sample(200:1200, n_clusters, TRUE),
+  antibiotic_rate = runif(n_clusters, 0.44, 0.87),
+  attendance_rate = sample(200:2000, n_clusters, TRUE),
   island = factor(ifelse(rbinom(n_clusters, 1, prob = 0.3) == 1, "Pemba", "Unguja"))
 )
 print(cluster_data)
@@ -2310,45 +2311,45 @@ print(cluster_data)
 
 ```
    cluster_id antibiotic_rate attendance_rate island
-1           1       0.6902751             700 Unguja
-2           2       0.6710422             609  Pemba
-3           3       0.7092736             270  Pemba
-4           4       0.6376178             599 Unguja
-5           5       0.7132391             301 Unguja
-6           6       0.6935446             642 Unguja
-7           7       0.6929203             873 Unguja
-8           8       0.6509508            1069 Unguja
-9           9       0.7339927            1057 Unguja
-10         10       0.6823873            1119 Unguja
-11         11       0.5113925            1174  Pemba
-12         12       0.6870309             719 Unguja
-13         13       0.7007907             367  Pemba
-14         14       0.6485086             245 Unguja
-15         15       0.7575323             387 Unguja
-16         16       0.5731451             913  Pemba
-17         17       0.7477334             662 Unguja
-18         18       0.7874469            1132 Unguja
-19         19       0.7837242             424 Unguja
-20         20       0.6296825             657 Unguja
-21         21       0.6718710            1118 Unguja
-22         22       0.7383742            1061  Pemba
-23         23       0.6836665             539 Unguja
-24         24       0.7873802             248 Unguja
-25         25       0.7556362            1062  Pemba
-26         26       0.5670695             328 Unguja
-27         27       0.6868616             692 Unguja
-28         28       0.7398332             230 Unguja
-29         29       0.6264835            1042  Pemba
-30         30       0.5709931             991  Pemba
-31         31       0.7074980             475 Unguja
-32         32       0.7751901             796 Unguja
-33         33       0.5442908             981 Unguja
-34         34       0.7095133             686 Unguja
-35         35       0.6321752             612 Unguja
-36         36       0.7608461             960 Unguja
-37         37       0.5717580             231  Pemba
-38         38       0.6315410             752 Unguja
-39         39       0.6346326            1198 Unguja
+1           1       0.8175535             389 Unguja
+2           2       0.4593160             652 Unguja
+3           3       0.8621713             372 Unguja
+4           4       0.7707444             604  Pemba
+5           5       0.4551056            1254  Pemba
+6           6       0.6258714             329 Unguja
+7           7       0.6704471            1587 Unguja
+8           8       0.4909854            1300 Unguja
+9           9       0.4857333            1092 Unguja
+10         10       0.8505579             615 Unguja
+11         11       0.6766742             827  Pemba
+12         12       0.4758405            1220  Pemba
+13         13       0.4410584             220 Unguja
+14         14       0.7559218            1209  Pemba
+15         15       0.4635024             546 Unguja
+16         16       0.5350358             351 Unguja
+17         17       0.8120696            1227  Pemba
+18         18       0.7226116             902 Unguja
+19         19       0.5457951            1321 Unguja
+20         20       0.6043556            1405 Unguja
+21         21       0.4889210             561 Unguja
+22         22       0.7520059            1124  Pemba
+23         23       0.8496349            1692  Pemba
+24         24       0.5743991            1941 Unguja
+25         25       0.5006325            1005 Unguja
+26         26       0.8609247            1735  Pemba
+27         27       0.8012171            1581 Unguja
+28         28       0.5604527            1544 Unguja
+29         29       0.8319907            1630 Unguja
+30         30       0.4641657            1164  Pemba
+31         31       0.5750356            1382 Unguja
+32         32       0.8478091            1822 Unguja
+33         33       0.7960053             683 Unguja
+34         34       0.4691478            1317  Pemba
+35         35       0.5454399             463 Unguja
+36         36       0.7230553            1044 Unguja
+37         37       0.7860256             968  Pemba
+38         38       0.7082810            1777 Unguja
+39         39       0.6951461             469 Unguja
 ```
 
 
@@ -2501,45 +2502,45 @@ print(cluster_data)
 
 ```
    cluster_id antibiotic_rate attendance_rate island arm
-1           1       0.6902751             700 Unguja   3
-2           2       0.6710422             609  Pemba   1
-3           3       0.7092736             270  Pemba   2
-4           4       0.6376178             599 Unguja   1
-5           5       0.7132391             301 Unguja   2
-6           6       0.6935446             642 Unguja   2
-7           7       0.6929203             873 Unguja   3
-8           8       0.6509508            1069 Unguja   2
-9           9       0.7339927            1057 Unguja   3
-10         10       0.6823873            1119 Unguja   1
-11         11       0.5113925            1174  Pemba   3
-12         12       0.6870309             719 Unguja   2
-13         13       0.7007907             367  Pemba   1
-14         14       0.6485086             245 Unguja   3
-15         15       0.7575323             387 Unguja   1
-16         16       0.5731451             913  Pemba   2
-17         17       0.7477334             662 Unguja   1
-18         18       0.7874469            1132 Unguja   2
-19         19       0.7837242             424 Unguja   3
-20         20       0.6296825             657 Unguja   2
-21         21       0.6718710            1118 Unguja   1
-22         22       0.7383742            1061  Pemba   3
-23         23       0.6836665             539 Unguja   2
-24         24       0.7873802             248 Unguja   1
-25         25       0.7556362            1062  Pemba   1
-26         26       0.5670695             328 Unguja   3
-27         27       0.6868616             692 Unguja   1
-28         28       0.7398332             230 Unguja   2
-29         29       0.6264835            1042  Pemba   3
-30         30       0.5709931             991  Pemba   3
-31         31       0.7074980             475 Unguja   1
-32         32       0.7751901             796 Unguja   2
-33         33       0.5442908             981 Unguja   3
-34         34       0.7095133             686 Unguja   1
-35         35       0.6321752             612 Unguja   2
-36         36       0.7608461             960 Unguja   3
-37         37       0.5717580             231  Pemba   2
-38         38       0.6315410             752 Unguja   1
-39         39       0.6346326            1198 Unguja   3
+1           1       0.8175535             389 Unguja   2
+2           2       0.4593160             652 Unguja   1
+3           3       0.8621713             372 Unguja   3
+4           4       0.7707444             604  Pemba   1
+5           5       0.4551056            1254  Pemba   2
+6           6       0.6258714             329 Unguja   3
+7           7       0.6704471            1587 Unguja   2
+8           8       0.4909854            1300 Unguja   1
+9           9       0.4857333            1092 Unguja   3
+10         10       0.8505579             615 Unguja   2
+11         11       0.6766742             827  Pemba   2
+12         12       0.4758405            1220  Pemba   1
+13         13       0.4410584             220 Unguja   3
+14         14       0.7559218            1209  Pemba   1
+15         15       0.4635024             546 Unguja   3
+16         16       0.5350358             351 Unguja   1
+17         17       0.8120696            1227  Pemba   3
+18         18       0.7226116             902 Unguja   2
+19         19       0.5457951            1321 Unguja   1
+20         20       0.6043556            1405 Unguja   2
+21         21       0.4889210             561 Unguja   2
+22         22       0.7520059            1124  Pemba   3
+23         23       0.8496349            1692  Pemba   2
+24         24       0.5743991            1941 Unguja   3
+25         25       0.5006325            1005 Unguja   1
+26         26       0.8609247            1735  Pemba   1
+27         27       0.8012171            1581 Unguja   3
+28         28       0.5604527            1544 Unguja   1
+29         29       0.8319907            1630 Unguja   2
+30         30       0.4641657            1164  Pemba   3
+31         31       0.5750356            1382 Unguja   1
+32         32       0.8478091            1822 Unguja   2
+33         33       0.7960053             683 Unguja   3
+34         34       0.4691478            1317  Pemba   3
+35         35       0.5454399             463 Unguja   1
+36         36       0.7230553            1044 Unguja   2
+37         37       0.7860256             968  Pemba   2
+38         38       0.7082810            1777 Unguja   1
+39         39       0.6951461             469 Unguja   3
 ```
 
 
@@ -2569,9 +2570,9 @@ print(aggregate(cluster_data[, c("antibiotic_rate", "attendance_rate")],
 
 ```
   arm antibiotic_rate attendance_rate
-1   1       0.7036465        675.0769
-2   2       0.6805336        623.9231
-3   3       0.6541156        848.7692
+1   1       0.5988004       1120.2308
+2   2       0.7172879       1130.4615
+3   3       0.6340379        928.0769
 ```
 
 
