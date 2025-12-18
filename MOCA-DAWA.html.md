@@ -2247,7 +2247,9 @@ summary(results[,c("OR_unadj","OR_unadj_lower","OR_unadj_upper",
 :::
 
 
-# **(4) Minimization algorithm for stratified randomization**
+# **(4) Stratified randomization algorithm**
+
+## **(4.1) Minimization**
 
 Following the method proposed in \[Xiao L, Yank V, Ma J. Algorithm for balancing both continuous and categorical covariates in randomized controlled trials. *Comput Methods Programs Biomed*. 2012;108(3):1185-1190. doi:10.1016/j.cmpb.2012.06.001\](<https://pubmed.ncbi.nlm.nih.gov/22727633/>)
 
@@ -2591,6 +2593,401 @@ barplot(t(island_prop),
 
 ::: {.cell-output-display}
 ![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
+:::
+:::
+
+
+## **(4.2) Covariate-constrained randomization**
+
+If we use batch-randomization (all clusters randomized at once and no new clusters entering later), the probably simple covariate-constrained randomization to be used: <https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/>
+
+-   Exact 1:1:1 overall allocation:
+
+    -   13 Control / 13 Intervention 1 / 13 Intervention 2
+
+-   Soft stratification for "island":
+
+    -   Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms
+
+    -   But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)
+
+-   Global numeric balance re antibiotic_rate and attendance_rate:
+
+    -   Optimise re mean difference between arms
+    -   Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)
+    -   Equal weight for the two continuous covariates because they're standardized and equally important
+
+-   Random selection among best allocations to preserve randomness, while enforcing optimal balance
+
+Structure of allocation dataset:
+
+1.  cluster_id: 1-39
+2.  antibiotic_rate
+    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.
+
+    -   Proportion, ranging from 0.44-0.87
+3.  attendance_rate
+    -   All patients presenting at the participating cluster, per month, mean over past year
+
+    -   Absolute count, ranging from 200-2000
+4.  island
+    -   Pemba vs Unguja
+    -   30:70
+5.  arm: allocation 1-3
+
+
+::: {.cell}
+
+```{.r .cell-code}
+set.seed(20250820)
+
+# Create hypothetical allocation dataset
+n_clusters <- 39
+cluster_data <- data.frame(
+  cluster_id = 1:n_clusters,
+  antibiotic_rate = runif(n_clusters, 0.44, 0.87),
+  attendance_rate = sample(200:2000, n_clusters, TRUE),
+  island = factor(ifelse(rbinom(n_clusters, 1, prob = 0.3) == 1, "Pemba", "Unguja"))
+)
+print(cluster_data)
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+   cluster_id antibiotic_rate attendance_rate island
+1           1       0.8175535             389 Unguja
+2           2       0.4593160             652 Unguja
+3           3       0.8621713             372 Unguja
+4           4       0.7707444             604  Pemba
+5           5       0.4551056            1254  Pemba
+6           6       0.6258714             329 Unguja
+7           7       0.6704471            1587 Unguja
+8           8       0.4909854            1300 Unguja
+9           9       0.4857333            1092 Unguja
+10         10       0.8505579             615 Unguja
+11         11       0.6766742             827  Pemba
+12         12       0.4758405            1220  Pemba
+13         13       0.4410584             220 Unguja
+14         14       0.7559218            1209  Pemba
+15         15       0.4635024             546 Unguja
+16         16       0.5350358             351 Unguja
+17         17       0.8120696            1227  Pemba
+18         18       0.7226116             902 Unguja
+19         19       0.5457951            1321 Unguja
+20         20       0.6043556            1405 Unguja
+21         21       0.4889210             561 Unguja
+22         22       0.7520059            1124  Pemba
+23         23       0.8496349            1692  Pemba
+24         24       0.5743991            1941 Unguja
+25         25       0.5006325            1005 Unguja
+26         26       0.8609247            1735  Pemba
+27         27       0.8012171            1581 Unguja
+28         28       0.5604527            1544 Unguja
+29         29       0.8319907            1630 Unguja
+30         30       0.4641657            1164  Pemba
+31         31       0.5750356            1382 Unguja
+32         32       0.8478091            1822 Unguja
+33         33       0.7960053             683 Unguja
+34         34       0.4691478            1317  Pemba
+35         35       0.5454399             463 Unguja
+36         36       0.7230553            1044 Unguja
+37         37       0.7860256             968  Pemba
+38         38       0.7082810            1777 Unguja
+39         39       0.6951461             469 Unguja
+```
+
+
+:::
+
+```{.r .cell-code}
+### CCR function for global randomisation with 3 arms
+# Create 10000 random allocations
+# Score each allocation: Each allocation gets a balance score based on how well it balances the covariates and island distribution. Lower scores = better balance.
+# Keep the top 10%: top_pct = 0.10
+# Randomly pick one from these top 1000
+run_global_ccr <- function(df, n_sims = 10000, top_pct = 0.10) {
+  n <- nrow(df)
+  
+  n_per_arm <- floor(n / 3)
+  
+  scores <- numeric(n_sims)
+  allocs <- matrix(NA, nrow = n_sims, ncol = n)
+  
+  for (i in 1:n_sims) {
+    arm_assign <- sample(c(rep("Control", n_per_arm),
+                           rep("Intervention_A", n_per_arm),
+                           rep("Intervention_B", n_per_arm)))
+    allocs[i, ] <- arm_assign
+    temp <- df
+    temp$arm <- arm_assign
+    
+    # Standardize covariates to same scale (mean=0, sd=1) for fair comparison
+    temp$antibiotic_rate_std <- scale(temp$antibiotic_rate)
+    temp$attendance_rate_std <- scale(temp$attendance_rate)
+    
+    # Calculate max pairwise difference across all 3 arms
+    means_abx <- tapply(temp$antibiotic_rate_std, temp$arm, mean)
+    means_att <- tapply(temp$attendance_rate_std, temp$arm, mean)
+    
+    # Max absolute difference across all pairs of arms for both numeric covariates
+    abx_imbal <- max(abs(means_abx["Control"] - means_abx["Intervention_A"]),
+                     abs(means_abx["Control"] - means_abx["Intervention_B"]),
+                     abs(means_abx["Intervention_A"] - means_abx["Intervention_B"]))
+    att_imbal <- max(abs(means_att["Control"] - means_att["Intervention_A"]),
+                     abs(means_att["Control"] - means_att["Intervention_B"]),
+                     abs(means_att["Intervention_A"] - means_att["Intervention_B"]))
+    
+    # Soft stratification for island: sum of squared differences from ideal allocation per island
+    island_table <- table(temp$island, temp$arm)
+    ideal_island <- table(temp$island) / 3  # ideal alloc per arm per island
+    island_diff <- 0
+    for (arm in c("Control", "Intervention_A", "Intervention_B")) {
+      island_diff <- island_diff + 
+        sum((island_table[, arm] - ideal_island)^2)
+    }
+    
+    # Total score: sum of imbalances with weight for island; Recap:
+    # Maximum difference in mean antibiotic rates across the 3 arms (with weight 1.0)
+    # Maximum difference in mean attendance rates across the 3 arms (with weight 1.0)
+    # Island distribution deviation from ideal 1:1:1 across arms (weight 0.01; much smaller weight = "soft" stratification)
+    # We prioritize balancing the continuous covariates over exact island distribution
+    # Equal weight for the two continuous covariates because they're standardized and equally important
+    scores[i] <- abx_imbal + att_imbal + 0.01 * island_diff
+  }
+  
+  # Select best allocations
+  threshold <- quantile(scores, top_pct)
+  best_idx <- which(scores <= threshold)
+  chosen <- sample(best_idx, 1)
+  
+  df$final_arm <- allocs[chosen, ]
+  return(df)
+}
+
+### Run it
+final_result <- run_global_ccr(cluster_data)
+print(final_result)
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+   cluster_id antibiotic_rate attendance_rate island      final_arm
+1           1       0.8175535             389 Unguja        Control
+2           2       0.4593160             652 Unguja        Control
+3           3       0.8621713             372 Unguja Intervention_B
+4           4       0.7707444             604  Pemba Intervention_A
+5           5       0.4551056            1254  Pemba Intervention_B
+6           6       0.6258714             329 Unguja Intervention_B
+7           7       0.6704471            1587 Unguja Intervention_A
+8           8       0.4909854            1300 Unguja Intervention_B
+9           9       0.4857333            1092 Unguja Intervention_B
+10         10       0.8505579             615 Unguja        Control
+11         11       0.6766742             827  Pemba Intervention_B
+12         12       0.4758405            1220  Pemba        Control
+13         13       0.4410584             220 Unguja Intervention_A
+14         14       0.7559218            1209  Pemba Intervention_A
+15         15       0.4635024             546 Unguja Intervention_B
+16         16       0.5350358             351 Unguja Intervention_A
+17         17       0.8120696            1227  Pemba Intervention_A
+18         18       0.7226116             902 Unguja        Control
+19         19       0.5457951            1321 Unguja        Control
+20         20       0.6043556            1405 Unguja Intervention_B
+21         21       0.4889210             561 Unguja Intervention_A
+22         22       0.7520059            1124  Pemba        Control
+23         23       0.8496349            1692  Pemba Intervention_A
+24         24       0.5743991            1941 Unguja Intervention_A
+25         25       0.5006325            1005 Unguja        Control
+26         26       0.8609247            1735  Pemba Intervention_A
+27         27       0.8012171            1581 Unguja        Control
+28         28       0.5604527            1544 Unguja        Control
+29         29       0.8319907            1630 Unguja Intervention_B
+30         30       0.4641657            1164  Pemba        Control
+31         31       0.5750356            1382 Unguja Intervention_A
+32         32       0.8478091            1822 Unguja        Control
+33         33       0.7960053             683 Unguja Intervention_B
+34         34       0.4691478            1317  Pemba Intervention_B
+35         35       0.5454399             463 Unguja        Control
+36         36       0.7230553            1044 Unguja Intervention_B
+37         37       0.7860256             968  Pemba Intervention_B
+38         38       0.7082810            1777 Unguja Intervention_A
+39         39       0.6951461             469 Unguja Intervention_A
+```
+
+
+:::
+
+```{.r .cell-code}
+### Checks
+cat("\nOverall treatment counts:\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Overall treatment counts:
+```
+
+
+:::
+
+```{.r .cell-code}
+print(table(final_result$final_arm))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+       Control Intervention_A Intervention_B 
+            13             13             13 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nBalance within each island (aim: approximate 1:1:1):\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Balance within each island (aim: approximate 1:1:1):
+```
+
+
+:::
+
+```{.r .cell-code}
+print(table(final_result$island, final_result$final_arm))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+        
+         Control Intervention_A Intervention_B
+  Pemba        3              5              4
+  Unguja      10              8              9
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nBalance by mean antibiotic_rate by arm:\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Balance by mean antibiotic_rate by arm:
+```
+
+
+:::
+
+```{.r .cell-code}
+print(tapply(final_result$antibiotic_rate, final_result$final_arm, mean))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+       Control Intervention_A Intervention_B 
+     0.6417998      0.6721246      0.6362018 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nBalance by mean attendance_rate by arm:\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Balance by mean attendance_rate by arm:
+```
+
+
+:::
+
+```{.r .cell-code}
+print(tapply(final_result$attendance_rate, final_result$final_arm, mean))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+       Control Intervention_A Intervention_B 
+     1061.6923      1135.0000       982.0769 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nStandard deviations:\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Standard deviations:
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("antibiotic_rate SD:", sd(final_result$antibiotic_rate), "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+antibiotic_rate SD: 0.146911 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("attendance_rate SD:", sd(final_result$attendance_rate), "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+attendance_rate SD: 488.5173 
+```
+
+
+:::
+
+```{.r .cell-code}
+island_table <- table(final_result$final_arm, final_result$island)
+island_prop <- prop.table(island_table, margin = 1)
+par(mar = c(7, 4, 4, 2) + 0.1)  # Increase bottom margin
+barplot(t(island_prop),
+        beside = TRUE,
+        col = c("steelblue", "tomato"),
+        legend.text = TRUE,
+        args.legend = list(title = "Island", x = "bottom", horiz = TRUE),
+        xlab = "Arm", ylab = "Proportion", main = "Island distribution across arms")
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
 :::
 :::
 

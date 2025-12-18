@@ -1516,7 +1516,9 @@ summary(results[,c("OR_unadj","OR_unadj_lower","OR_unadj_upper",
 
 ```
 
-# **(4) Minimization algorithm for stratified randomization**
+# **(4) Stratified randomization algorithm**
+
+## **(4.1) Minimization**
 
 Following the method proposed in \[Xiao L, Yank V, Ma J. Algorithm for balancing both continuous and categorical covariates in randomized controlled trials. *Comput Methods Programs Biomed*. 2012;108(3):1185-1190. doi:10.1016/j.cmpb.2012.06.001\](<https://pubmed.ncbi.nlm.nih.gov/22727633/>)
 
@@ -1724,4 +1726,151 @@ barplot(t(island_prop),
         args.legend = list(title = "Island", x = "topright"),
         xlab = "Arm", ylab = "Proportion", main = "Island distribution across arms")
 
+```
+
+## **(4.2) Covariate-constrained randomization**
+
+If we use batch-randomization (all clusters randomized at once and no new clusters entering later), the probably simple covariate-constrained randomization to be used: <https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/>
+
+-   Exact 1:1:1 overall allocation:
+
+    -   13 Control / 13 Intervention 1 / 13 Intervention 2
+
+-   Soft stratification for "island":
+
+    -   Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms
+
+    -   But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)
+
+-   Global numeric balance re antibiotic_rate and attendance_rate:
+
+    -   Optimise re mean difference between arms
+    -   Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)
+    -   Equal weight for the two continuous covariates because they're standardized and equally important
+
+-   Random selection among best allocations to preserve randomness, while enforcing optimal balance
+
+Structure of allocation dataset:
+
+1.  cluster_id: 1-39
+2.  antibiotic_rate
+    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.
+
+    -   Proportion, ranging from 0.44-0.87
+3.  attendance_rate
+    -   All patients presenting at the participating cluster, per month, mean over past year
+
+    -   Absolute count, ranging from 200-2000
+4.  island
+    -   Pemba vs Unguja
+    -   30:70
+5.  arm: allocation 1-3
+
+```{r}
+set.seed(20250820)
+
+# Create hypothetical allocation dataset
+n_clusters <- 39
+cluster_data <- data.frame(
+  cluster_id = 1:n_clusters,
+  antibiotic_rate = runif(n_clusters, 0.44, 0.87),
+  attendance_rate = sample(200:2000, n_clusters, TRUE),
+  island = factor(ifelse(rbinom(n_clusters, 1, prob = 0.3) == 1, "Pemba", "Unguja"))
+)
+print(cluster_data)
+
+### CCR function for global randomisation with 3 arms
+# Create 10000 random allocations
+# Score each allocation: Each allocation gets a balance score based on how well it balances the covariates and island distribution. Lower scores = better balance.
+# Keep the top 10%: top_pct = 0.10
+# Randomly pick one from these top 1000
+run_global_ccr <- function(df, n_sims = 10000, top_pct = 0.10) {
+  n <- nrow(df)
+  
+  n_per_arm <- floor(n / 3)
+  
+  scores <- numeric(n_sims)
+  allocs <- matrix(NA, nrow = n_sims, ncol = n)
+  
+  for (i in 1:n_sims) {
+    arm_assign <- sample(c(rep("Control", n_per_arm),
+                           rep("Intervention_A", n_per_arm),
+                           rep("Intervention_B", n_per_arm)))
+    allocs[i, ] <- arm_assign
+    temp <- df
+    temp$arm <- arm_assign
+    
+    # Standardize covariates to same scale (mean=0, sd=1) for fair comparison
+    temp$antibiotic_rate_std <- scale(temp$antibiotic_rate)
+    temp$attendance_rate_std <- scale(temp$attendance_rate)
+    
+    # Calculate max pairwise difference across all 3 arms
+    means_abx <- tapply(temp$antibiotic_rate_std, temp$arm, mean)
+    means_att <- tapply(temp$attendance_rate_std, temp$arm, mean)
+    
+    # Max absolute difference across all pairs of arms for both numeric covariates
+    abx_imbal <- max(abs(means_abx["Control"] - means_abx["Intervention_A"]),
+                     abs(means_abx["Control"] - means_abx["Intervention_B"]),
+                     abs(means_abx["Intervention_A"] - means_abx["Intervention_B"]))
+    att_imbal <- max(abs(means_att["Control"] - means_att["Intervention_A"]),
+                     abs(means_att["Control"] - means_att["Intervention_B"]),
+                     abs(means_att["Intervention_A"] - means_att["Intervention_B"]))
+    
+    # Soft stratification for island: sum of squared differences from ideal allocation per island
+    island_table <- table(temp$island, temp$arm)
+    ideal_island <- table(temp$island) / 3  # ideal alloc per arm per island
+    island_diff <- 0
+    for (arm in c("Control", "Intervention_A", "Intervention_B")) {
+      island_diff <- island_diff + 
+        sum((island_table[, arm] - ideal_island)^2)
+    }
+    
+    # Total score: sum of imbalances with weight for island; Recap:
+    # Maximum difference in mean antibiotic rates across the 3 arms (with weight 1.0)
+    # Maximum difference in mean attendance rates across the 3 arms (with weight 1.0)
+    # Island distribution deviation from ideal 1:1:1 across arms (weight 0.01; much smaller weight = "soft" stratification)
+    # We prioritize balancing the continuous covariates over exact island distribution
+    # Equal weight for the two continuous covariates because they're standardized and equally important
+    scores[i] <- abx_imbal + att_imbal + 0.01 * island_diff
+  }
+  
+  # Select best allocations
+  threshold <- quantile(scores, top_pct)
+  best_idx <- which(scores <= threshold)
+  chosen <- sample(best_idx, 1)
+  
+  df$final_arm <- allocs[chosen, ]
+  return(df)
+}
+
+### Run it
+final_result <- run_global_ccr(cluster_data)
+print(final_result)
+
+### Checks
+cat("\nOverall treatment counts:\n")
+print(table(final_result$final_arm))
+
+cat("\nBalance within each island (aim: approximate 1:1:1):\n")
+print(table(final_result$island, final_result$final_arm))
+
+cat("\nBalance by mean antibiotic_rate by arm:\n")
+print(tapply(final_result$antibiotic_rate, final_result$final_arm, mean))
+
+cat("\nBalance by mean attendance_rate by arm:\n")
+print(tapply(final_result$attendance_rate, final_result$final_arm, mean))
+
+cat("\nStandard deviations:\n")
+cat("antibiotic_rate SD:", sd(final_result$antibiotic_rate), "\n")
+cat("attendance_rate SD:", sd(final_result$attendance_rate), "\n")
+
+island_table <- table(final_result$final_arm, final_result$island)
+island_prop <- prop.table(island_table, margin = 1)
+par(mar = c(7, 4, 4, 2) + 0.1)  # Increase bottom margin
+barplot(t(island_prop),
+        beside = TRUE,
+        col = c("steelblue", "tomato"),
+        legend.text = TRUE,
+        args.legend = list(title = "Island", x = "bottom", horiz = TRUE),
+        xlab = "Arm", ylab = "Proportion", main = "Island distribution across arms")
 ```
