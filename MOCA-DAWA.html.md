@@ -556,6 +556,213 @@ ggplot(results_df, aes(x = ICC, y = n_individuals_per_arm * 3)) +
 :::
 
 
+### **(1.1.3) Varying Effect size**
+
+Varying the effect size: from 25 pp down to 15 pp.
+
+Keep the baseline prescription rate at 75% (control rate)
+
+Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)
+
+Keep the CV at 0.1 (will not make any difference if CV = 0)
+
+
+::: {.cell}
+
+```{.r .cell-code}
+# Define fixed parameters
+power <- 0.80
+alpha <- 0.05
+p_C <- 0.75
+ICC <- 0.20
+CV <- 0.1
+m <- 40
+
+# Range of effect sizes (percentage point reductions)
+effect_sizes_pp <- seq(15, 25, by = 1)
+
+results_effect_df <- data.frame(
+  effect_size_pp = numeric(),
+  n_clusters_per_arm = numeric(),
+  n_individuals_per_arm = numeric()
+)
+
+cohen_h <- function(p1, p2) {
+  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
+}
+
+for (delta_pp in effect_sizes_pp) {
+  p_I <- p_C - (delta_pp / 100)
+  
+  # Skip if intervention rate is invalid
+  if (p_I < 0) {
+    next
+  }
+  
+  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * ICC
+  
+  h <- cohen_h(p_I, p_C)
+  
+  ss <- pwr.2p.test(h = h, power = power, sig.level = alpha)$n
+  
+  n_per_arm_crt <- ceiling(ss * deff_cv)
+  
+  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
+  
+  results_effect_df <- rbind(results_effect_df, data.frame(
+    effect_size_pp = delta_pp,
+    n_clusters_per_arm = n_clusters_per_arm,
+    n_individuals_per_arm = n_per_arm_crt
+  ))
+}
+```
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+ggplot(results_effect_df, aes(x = effect_size_pp, y = n_clusters_per_arm)) +
+  geom_line(color = "darkblue", size = 1) +
+  geom_point(color = "darkblue", size = 2) +
+  labs(
+    title = "Clusters per arm vs. Effect size",
+    x = "Effect size (percentage point reduction)",
+    y = "Clusters per arm (pairwise comparison)"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 25, by = 2)) +
+  scale_y_continuous(breaks = seq(0, max(results_effect_df$n_clusters_per_arm), by = 1))
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-11-1.png){width=672}
+:::
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+ggplot(results_effect_df, aes(x = effect_size_pp, y = n_individuals_per_arm)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue", size = 2) +
+  labs(
+    title = "Individuals per arm vs. Effect size",
+    x = "Effect size (percentage point reduction)",
+    y = "Individuals per arm (pairwise comparison)"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(10, 25, by = 2)) +
+  scale_y_continuous(breaks = seq(0, max(results_effect_df$n_individuals_per_arm), by = 50))
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-12-1.png){width=672}
+:::
+:::
+
+
+### **(1.1.4) Varying Effect size and varying ICC**
+
+3-D plot, varying the effect size (25 pp to 15 pp) & varying ICC (0.1 to 0.3)
+
+Keep the baseline prescription rate at 75% (control rate)
+
+Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)
+
+Keep the CV at 0.1 (will not make any difference if CV = 0)
+
+
+::: {.cell}
+
+```{.r .cell-code}
+# Define parameters
+power <- 0.80
+alpha <- 0.05
+p_C <- 0.75
+CV <- 0.1
+m <- 40
+
+# Ranges
+ICC_values <- seq(0.10, 0.30, by = 0.02)
+effect_sizes_pp <- seq(15, 25, by = 1)
+
+# Create grid
+results_3d <- expand.grid(
+  ICC = ICC_values,
+  effect_size_pp = effect_sizes_pp
+)
+
+results_3d$n_clusters_per_arm <- NA
+
+cohen_h <- function(p1, p2) {
+  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
+}
+
+for (i in 1:nrow(results_3d)) {
+  icc <- results_3d$ICC[i]
+  delta_pp <- results_3d$effect_size_pp[i]
+  
+  p_I <- p_C - (delta_pp / 100)
+  
+  if (p_I < 0) {
+    next
+  }
+  
+  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * icc
+  
+  h <- cohen_h(p_I, p_C)
+  
+  ss <- pwr.2p.test(h = h, power = power, sig.level = alpha)$n
+  
+  n_per_arm_crt <- ceiling(ss * deff_cv)
+  
+  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
+  
+  results_3d$n_clusters_per_arm[i] <- n_clusters_per_arm
+}
+```
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+ggplot(results_3d, aes(x = effect_size_pp, y = ICC, fill = n_clusters_per_arm)) +
+  geom_tile() +
+  geom_contour(aes(z = n_clusters_per_arm), color = "white", size = 0.5, alpha = 0.6) +
+  geom_text(aes(label = n_clusters_per_arm), size = 2.5, color = "black") +
+  scale_fill_gradient2(
+    low = "darkgreen", 
+    mid = "yellow", 
+    high = "darkred",
+    midpoint = median(results_3d$n_clusters_per_arm, na.rm = TRUE),
+    name = "Clusters\nper arm"
+  ) +
+  labs(
+    title = "Clusters per arm: ICC vs Effect size (Power = 80%, pairwise comparison)",
+    x = "Effect size (percentage point reduction)",
+    y = "ICC"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  ) +
+  scale_x_continuous(breaks = seq(15, 25, by = 2)) +
+  scale_y_continuous(breaks = seq(0.10, 0.30, by = 0.02))
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-14-1.png){width=960}
+:::
+:::
+
+
 # **(2) Sample size calculation CRT: Simulations**
 
 ## **(2.1) Parameters**
@@ -787,7 +994,7 @@ ggplot(df_sim, aes(x = factor(cluster), y = size, fill = factor(arm))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-10-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-15-1.png){width=672}
 :::
 :::
 
@@ -935,7 +1142,7 @@ ggplot(results, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-13-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-18-1.png){width=672}
 :::
 :::
 
@@ -980,7 +1187,7 @@ ggplot(df_power_icc, aes(x = ICC, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-14-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
 :::
 :::
 
@@ -1026,7 +1233,7 @@ ggplot(df_power_css, aes(x = Cluster_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-15-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
 :::
 :::
 
@@ -1071,7 +1278,7 @@ ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-16-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-21-1.png){width=672}
 :::
 :::
 
@@ -1227,7 +1434,7 @@ ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-24-1.png){width=672}
 :::
 :::
 
@@ -1268,7 +1475,7 @@ ggplot(df_power_icc_glmm, aes(x = ICC, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
 :::
 :::
 
@@ -1310,7 +1517,7 @@ ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-21-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
 :::
 :::
 
@@ -2592,7 +2799,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-30-1.png){width=672}
 :::
 :::
 
@@ -2987,7 +3194,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-31-1.png){width=672}
 :::
 :::
 
