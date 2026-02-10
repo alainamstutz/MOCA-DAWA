@@ -642,29 +642,6 @@ ggplot(results_effect_df, aes(x = effect_size_pp, y = n_clusters_per_arm)) +
 :::
 
 
-
-::: {.cell}
-
-```{.r .cell-code}
-ggplot(results_effect_df, aes(x = effect_size_pp, y = n_individuals_per_arm)) +
-  geom_line(color = "steelblue", size = 1) +
-  geom_point(color = "steelblue", size = 2) +
-  labs(
-    title = "Individuals per arm vs. Effect size",
-    x = "Effect size (percentage point reduction)",
-    y = "Individuals per arm (pairwise comparison)"
-  ) +
-  theme_minimal() +
-  scale_x_continuous(breaks = seq(10, 25, by = 2)) +
-  scale_y_continuous(breaks = seq(0, max(results_effect_df$n_individuals_per_arm), by = 50))
-```
-
-::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-12-1.png){width=672}
-:::
-:::
-
-
 ### **(1.1.4) Varying Effect size and varying ICC**
 
 3-D plot, varying the effect size (25 pp to 15 pp) & varying ICC (0.1 to 0.3)
@@ -758,7 +735,91 @@ ggplot(results_3d, aes(x = effect_size_pp, y = ICC, fill = n_clusters_per_arm)) 
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-14-1.png){width=960}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-13-1.png){width=960}
+:::
+:::
+
+
+### **(1.1.5) See whether cluster size improves anything in terms of power**
+
+Just a quick check - adding more participants per clusters does not really help
+
+Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduction, ICC 0.20
+
+
+::: {.cell}
+
+```{.r .cell-code}
+# Fixed parameters
+n_clusters_per_arm <- 13  # Fixed number of clusters
+p_C <- 0.75
+p_I <- 0.50  # 25 pp reduction
+ICC <- 0.20
+CV <- 0.1
+alpha <- 0.05
+
+# Range of cluster sizes to explore
+cluster_sizes <- seq(20, 200, by = 10)
+
+# Function to calculate power for given cluster size
+cohen_h <- function(p1, p2) {
+  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
+}
+
+results_cluster_size <- data.frame(
+  cluster_size = numeric(),
+  total_n_per_arm = numeric(),
+  achieved_power = numeric(),
+  deff = numeric()
+)
+
+h <- cohen_h(p_I, p_C)
+
+for (m in cluster_sizes) {
+  # Design effect for this cluster size
+  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * ICC
+  
+  # Total individuals per arm
+  total_n <- n_clusters_per_arm * m
+  
+  # Effective sample size (accounting for clustering)
+  effective_n <- total_n / deff_cv
+  
+  # Calculate achieved power
+  power_achieved <- pwr.2p.test(h = h, n = effective_n, sig.level = alpha)$power
+  
+  results_cluster_size <- rbind(results_cluster_size, data.frame(
+    cluster_size = m,
+    total_n_per_arm = total_n,
+    achieved_power = power_achieved,
+    deff = deff_cv
+  ))
+}
+```
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+ggplot(results_cluster_size, aes(x = cluster_size, y = achieved_power)) +
+  geom_line(color = "darkgreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 2.5) +
+  geom_hline(yintercept = 0.80, linetype = "dashed", color = "red", linewidth = 0.8) +
+  labs(
+    title = "Diminishing Returns: Power vs. Cluster Size, at fixed cluster N = 13 per arm",
+    x = "Participants per cluster (m)",
+    y = "Power"
+  ) +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.1)) +
+  scale_x_continuous(breaks = seq(20, 200, by = 20))
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-15-1.png){width=672}
 :::
 :::
 
@@ -994,7 +1055,7 @@ ggplot(df_sim, aes(x = factor(cluster), y = size, fill = factor(arm))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-15-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-16-1.png){width=672}
 :::
 :::
 
@@ -1142,7 +1203,7 @@ ggplot(results, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-18-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
 :::
 :::
 
@@ -1187,7 +1248,7 @@ ggplot(df_power_icc, aes(x = ICC, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
 :::
 :::
 
@@ -1233,7 +1294,7 @@ ggplot(df_power_css, aes(x = Cluster_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-21-1.png){width=672}
 :::
 :::
 
@@ -1278,7 +1339,7 @@ ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-21-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-22-1.png){width=672}
 :::
 :::
 
@@ -1434,7 +1495,7 @@ ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-24-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
 :::
 :::
 
@@ -1475,7 +1536,7 @@ ggplot(df_power_icc_glmm, aes(x = ICC, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
 :::
 :::
 
@@ -1517,7 +1578,7 @@ ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-27-1.png){width=672}
 :::
 :::
 
@@ -2799,7 +2860,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-30-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-31-1.png){width=672}
 :::
 :::
 
@@ -3194,7 +3255,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-31-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png){width=672}
 :::
 :::
 
