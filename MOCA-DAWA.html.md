@@ -15,53 +15,55 @@ editor: visual
 
 # **DAWA cluster randomized trial (CRT)**
 
+> **Update — sample size revised based on new pilot data.** Pilot data collected in the trial setting indicate an ICC for antibiotic prescription in the range of **0.05-0.10**, substantially lower than the 0.20 previously assumed from mainland Tanzania. All sample size and power calculations below have been updated to use **ICC = 0.10** (the conservative upper end of the pilot range) as the primary assumption, with sensitivity analyses across 0.02-0.15.
+
 Interventions on the level of health care workers at health facilities (dispensaries) in Zanzibar to reduce antibiotic prescriptions. Multi-arm with 2 interventions:
 
--   **Control**: Standard of care
+- **Control**: Standard of care
 
--   **Intervention 1**: eHealth tool (CDSS & nudging)
+- **Intervention 1**: eHealth tool (CDSS & nudging)
 
--   **Intervention 2**: eHealth tool (CDSS & nudging) + AMR stewardship clubs
+- **Intervention 2**: eHealth tool (CDSS & nudging) + AMR stewardship clubs
 
 ## **Parameters and design considerations**
 
--   Eligible participants: Patients attending the dispensary with acute infectious illness
+- Eligible participants: Patients attending the dispensary with acute infectious illness
 
--   Power it for subgroup of kids under 5 years (special subgroup of interest), ca. 33% of all attending patients with acute infectious illness
+- Power it for subgroup of kids under 5 years (special subgroup of interest), ca. 33% of all attending patients with acute infectious illness
 
--   Cluster size of eligible overall participants: 80-500 per cluster per month
+- Cluster size of eligible overall participants: 80-500 per cluster per month
 
--   Cluster size of eligible kids under 5 years (special subgroup of interest): 26-165 per cluster per month
+- Cluster size of eligible kids under 5 years (special subgroup of interest): 26-165 per cluster per month
 
--   Max. 39 clusters, i.e. max. 13 clusters per arm, due to feasibility/budget
+- Max. 39 clusters, i.e. max. 13 clusters per arm, due to feasibility/budget
 
--   Binary outcome: Proportion of patients prescribed an antibiotic at first presentation
+- Binary outcome: Proportion of patients prescribed an antibiotic at first presentation
 
--   Baseline prescription rate (control clusters): 75%, based on existing data
+- Baseline prescription rate (control clusters): 75%, based on existing data
 
--   Expected delta Control to Intervention 1: 25 percentage points, based on prior evidence
+- Expected delta Control to Intervention 1: 25 percentage points, based on prior evidence
 
--   Expected delta Control to Intervention 2: 30 percentage points
+- Expected delta Control to Intervention 2: 30 percentage points
 
--   Intervention 1 vs Intervention 2 is not of primary interest
+- Intervention 1 vs Intervention 2 is not of primary interest
 
--   Min. desired power 80%
+- Min. desired power 80%
 
--   ICC for AB prescription: 0.20, based on prior evidence in same setting (but mainland TZ)
+- ICC for AB prescription: 0.10, based on our own pilot data from the trial setting, which indicated an ICC in the range of 0.05-0.10. We take the upper end (0.10) as the primary, conservative assumption and explore 0.02-0.15 in sensitivity analyses. (The earlier assumption of 0.20 was based on prior evidence from a different setting, mainland TZ, and is superseded by the pilot data)
 
--   We expect the intervention effect to manifest 3-4 months after baseline
+- We expect the intervention effect to manifest 3-4 months after baseline
 
--   Important feasibility aspect: The primary outcome is collected through routine data, while the key secondary outcomes are collected via phone calls
+- Important feasibility aspect: The primary outcome is collected through routine data, while the key secondary outcomes are collected via phone calls
 
--   CV (coefficient of variation), ratio of standard deviation of cluster sizes to mean of cluster sizes
+- CV (coefficient of variation), ratio of standard deviation of cluster sizes to mean of cluster sizes
 
--   Since we have flexibility in individual sample size per cluster and need to restrict it anyway to keep the data collection for the key secondary outcomes feasible, we decided to take a random sample from each cluster, same n, which will reduce the CV. Moreover, we will stratify the randomization and adjust the outcome model for actual cluster size (attendance rate)
+- Since we have flexibility in individual sample size per cluster and need to restrict it anyway to keep the data collection for the key secondary outcomes feasible, we decided to take a random sample from each cluster, same n, which will reduce the CV. Moreover, we will stratify the randomization and adjust the outcome model for actual cluster size (attendance rate)
 
--   An individual sample size per cluster (i.e. mean cluster size) of n=150 will be feasible to recruit during 2 months (month 4 and 5 after baseline, when effect of intervention kicks in) from each cluster, using a random sampling strategy. N=150/cluster means we will get n=40/cluster kids under 5, for which we power the sample size. And we can safely assume a minimal CV of 0.1
+- An individual sample size per cluster (i.e. mean cluster size) of n=150 will be feasible to recruit during 2 months (month 4 and 5 after baseline, when effect of intervention kicks in) from each cluster, using a random sampling strategy. N=150/cluster means we will get n=40/cluster kids under 5, for which we power the sample size. And we can safely assume a minimal CV of 0.1
 
--   Recruitment bias? -\> see protocol how to mitigate
+- Recruitment bias? -\> see protocol how to mitigate
 
--   Multiplicity? -\> see separate discussion. Decision: No adjustment for multiplicity
+- Multiplicity? -\> see separate discussion. Decision: No adjustment for multiplicity
 
 **Packages**
 
@@ -223,58 +225,134 @@ However, let's not forget the cluster size variation. The usual conservative adj
 
 DEFF_cv = 1+((m(1+CV\^2)−1))ICC , whereby CV is the coefficient of variation (ratio of standard deviation of cluster sizes to mean of cluster sizes)
 
+**Small-sample correction.** `pwr.2p.test` uses a normal approximation: it compares the test statistic to z (1.96 at alpha = 0.05). In a CRT the effective unit of inference is the cluster, so with few clusters per arm the reference distribution is t on 2(c-1) degrees of freedom, not z (Hayes & Bennett). At 8 clusters per arm that is t(14) = 2.145 rather than 1.96, which is not negligible. We therefore define our own power function that takes an optional small-sample correction, and use the corrected version throughout chapter 1. In practice the correction costs about one extra cluster per arm whenever there are fewer than ca. 15 clusters per arm, which matches the standard rule of thumb.
+
+**Note on the ICC scale.** Throughout this document the ICC is specified on the proportion scale (the ordinary correlation between two individuals' binary outcomes in the same cluster), which is what the DEFF formula requires and what our pilot data report. Chapter 2 converts it internally to the latent logit scale where the simulation needs it - see chapter 2.2.
+
 
 ::: {.cell}
 
 ```{.r .cell-code}
 # Parameters
-p_C <- 0.75 
-p_I1 <- 0.50 
-p_I2 <- 0.45 
-power <- 0.80 
-ICC <- 0.20
+p_C <- 0.75
+p_I1 <- 0.50
+p_I2 <- 0.45
+power <- 0.80
+ICC <- 0.10 # proportion scale, from pilot data (range 0.05-0.10, we take the conservative upper end)
 alpha <- 0.05 # do not apply any (bonferroni) correction for multiplicity (see separate discussion). Bonferroni would be alpha_familywise / number of comparisons (=2)
 
 m <- 40
 CV <- 0.1 # minimal CV
 
-deff <- 1+(m-1)*ICC # standard DEFF
-deff_cv <- 1+((m*(1+CV^2))-1)*ICC # DEFF with cluster size variation
+## Helper functions used throughout chapter 1 ------------------------------
+
+# Cohen's h
+cohen_h <- function(p1, p2) 2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
+
+# DEFF with cluster size variation
+deff_cv_fun <- function(m, CV, ICC) 1 + ((m * (1 + CV^2)) - 1) * ICC
+
+# Power of one pairwise comparison in a CRT, with optional small-sample correction.
+# small_sample = FALSE reproduces pwr.2p.test exactly (normal approximation);
+# small_sample = TRUE refers the statistic to t on 2*(clusters per arm - 1) df.
+power_crt <- function(h, n_clusters_arm, m, CV, ICC, alpha = 0.05, small_sample = TRUE){
+  deff  <- deff_cv_fun(m, CV, ICC)
+  n_eff <- n_clusters_arm * m / deff   # design-effect-deflated n per arm
+  ncp   <- abs(h) * sqrt(n_eff / 2)    # same non-centrality that pwr.2p.test uses
+  if(!small_sample) return(pnorm(ncp - qnorm(1 - alpha/2)))
+  df <- 2 * (n_clusters_arm - 1)       # cluster-level df
+  tc <- qt(1 - alpha/2, df)
+  pt(-tc, df, ncp) + 1 - pt(tc, df, ncp)
+}
+
+# Smallest number of clusters per arm that reaches the target power
+n_clusters_crt <- function(h, m, CV, ICC, power = 0.80, alpha = 0.05,
+                           small_sample = TRUE, max_c = 1000){
+  for(cc in 2:max_c){
+    if(power_crt(h, cc, m, CV, ICC, alpha, small_sample) >= power) return(cc)
+  }
+  NA_integer_
+}
+
+## Calculation -------------------------------------------------------------
+
+deff <- 1 + (m - 1) * ICC # standard DEFF
+deff_cv <- deff_cv_fun(m, CV, ICC) # DEFF with cluster size variation
 
 # Effect sizes
 h_I1_C <- ES.h(p1 = p_I1, p2 = p_C)
 h_I2_C <- ES.h(p1 = p_I2, p2 = p_C)
 
 # Individual RCT sample sizes for both contrasts
-ss1 <- pwr.2p.test(h = h_I1_C, power = 0.80, sig.level = alpha)$n
-ss2 <- pwr.2p.test(h = h_I2_C, power = 0.80, sig.level = alpha)$n
+ss1 <- pwr.2p.test(h = h_I1_C, power = power, sig.level = alpha)$n
+ss2 <- pwr.2p.test(h = h_I2_C, power = power, sig.level = alpha)$n
 
-# CRT sample sizes for both contrasts
-ss1_crt <- ceiling(ss1 * deff_cv)
-ss2_crt <- ceiling(ss2 * deff_cv)
-
-# Contrast 1 (smaller Delta/Cohens'd => determines overall cluster number)
-n_clusters1 <- ceiling(ss1_crt / m)
-cat("Cluster sample size int arm 1:", n_clusters1, "\n")
+cat("DEFF (standard):", round(deff, 2), " DEFF (with CV):", round(deff_cv, 2), "\n\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Cluster sample size int arm 1: 13 
+DEFF (standard): 4.9  DEFF (with CV): 4.94 
 ```
 
 
 :::
 
 ```{.r .cell-code}
-cat("Individual sample size int arm 1:", ss1_crt, "\n")
+# Clusters per arm, without and with the small-sample correction
+n_cl1_z <- n_clusters_crt(h_I1_C, m, CV, ICC, power, alpha, small_sample = FALSE)
+n_cl1_t <- n_clusters_crt(h_I1_C, m, CV, ICC, power, alpha, small_sample = TRUE)
+n_cl2_z <- n_clusters_crt(h_I2_C, m, CV, ICC, power, alpha, small_sample = FALSE)
+n_cl2_t <- n_clusters_crt(h_I2_C, m, CV, ICC, power, alpha, small_sample = TRUE)
+
+# Contrast 1 (smaller Delta/Cohen's h => determines overall cluster number)
+cat("Contrast C vs I1 (", (p_C - p_I1) * 100, "pp )\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Individual sample size int arm 1: 509 
+Contrast C vs I1 ( 25 pp )
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Clusters per arm, normal approximation :", n_cl1_z, "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Clusters per arm, normal approximation : 8 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Clusters per arm, small-sample corrected:", n_cl1_t, "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Clusters per arm, small-sample corrected: 9 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Individuals per arm (clusters x m)      :", n_cl1_t * m, "\n\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Individuals per arm (clusters x m)      : 360 
 ```
 
 
@@ -282,62 +360,159 @@ Individual sample size int arm 1: 509
 
 ```{.r .cell-code}
 # Contrast 2
-n_clusters2 <- ceiling(ss2_crt / m)
-cat("Cluster sample size int arm 2:", n_clusters2, "\n")
+cat("Contrast C vs I2 (", (p_C - p_I2) * 100, "pp )\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Cluster sample size int arm 2: 9 
+Contrast C vs I2 ( 30 pp )
 ```
 
 
 :::
 
 ```{.r .cell-code}
-cat("Individual sample size int arm 2:", ss2_crt, "\n")
+cat("  Clusters per arm, normal approximation :", n_cl2_z, "\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Individual sample size int arm 2: 359 
+  Clusters per arm, normal approximation : 5 
 ```
 
 
 :::
 
 ```{.r .cell-code}
-# Total
+cat("  Clusters per arm, small-sample corrected:", n_cl2_t, "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Clusters per arm, small-sample corrected: 7 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Individuals per arm (clusters x m)      :", n_cl2_t * m, "\n\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Individuals per arm (clusters x m)      : 280 
+```
+
+
+:::
+
+```{.r .cell-code}
+# The driving contrast determines the design
+n_clusters1 <- n_cl1_t
+n_clusters2 <- n_cl2_t
+
+# Total (based on the driving contrast, and on whole clusters)
 tot_clusters <- n_clusters1 * 3
-tot_ind <- ss1_crt * 3
+tot_ind <- n_clusters1 * m * 3 # note: derived from whole clusters, not from the un-rounded n
 cat("Total cluster sample size:", tot_clusters, "\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Total cluster sample size: 39 
+Total cluster sample size: 27 
 ```
 
 
 :::
 
 ```{.r .cell-code}
-cat("Total individual sample size:", tot_ind, "\n")
+cat("Total individual sample size:", tot_ind, "\n\n")
 ```
 
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Total individual sample size: 1527 
+Total individual sample size: 1080 
+```
+
+
+:::
+
+```{.r .cell-code}
+# Power of the planned design (13 clusters per arm, the feasibility ceiling)
+cat("Planned design, 13 clusters per arm:\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+Planned design, 13 clusters per arm:
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Power for C vs I1 (25 pp):", round(power_crt(h_I1_C, 13, m, CV, ICC, alpha), 3), "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Power for C vs I1 (25 pp): 0.954 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  Power for C vs I2 (30 pp):", round(power_crt(h_I2_C, 13, m, CV, ICC, alpha), 3), "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Power for C vs I2 (30 pp): 0.991 
+```
+
+
+:::
+
+```{.r .cell-code}
+# Minimum detectable effect at 13 clusters per arm and 80% power
+mde <- uniroot(function(d) power_crt(cohen_h(p_C - d, p_C), 13, m, CV, ICC, alpha) - power,
+               c(0.01, 0.60))$root
+cat("  Minimum detectable effect at 80% power:", round(mde * 100, 1), "pp\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  Minimum detectable effect at 80% power: 19 pp
 ```
 
 
 :::
 :::
 
+
+**Implication of the revised ICC (0.10 instead of 0.20):**
+
+- The DEFF drops from 8.88 to 4.94, and the requirement for the driving contrast (Control vs Int 1, 25 pp) would fall from 13 clusters per arm to **9 clusters per arm** with the small-sample correction (8 without it), i.e. 27 instead of 39 clusters in total.
+
+- The small-sample correction costs one to two extra clusters per arm at these cluster numbers (C vs I1: 8 -\> 9; C vs I2: 5 -\> 7), consistent with the usual rule of thumb of adding a cluster per arm. All figures in chapter 1 below are small-sample corrected.
+
+- We nevertheless **retain the planned 13 clusters per arm (39 in total)**, for three reasons: (i) 39 clusters is within the feasibility/budget ceiling and was already planned; (ii) at 8-9 clusters per arm the small-sample behaviour of the analysis model (GLMM with df = clusters - cluster-level parameters) becomes unreliable, and the formula-based DEFF approach is known to under-estimate the required size in that range; (iii) the reserve buys robustness against the ICC being at the upper end of, or above, the pilot range, and (iv) detecting a lower delta instead is more realistic and still clinically meaningful.
+
+- At 13 clusters per arm and ICC 0.10, power for the 25 pp contrast is at 95% (formula-based), and the minimum detectable effect at 80% power improves from 25 pp to **19 pp**.
+
+- Formula and simulation agree on these results, under symmetric cluster effects and ignoring adjustments.
 
 ## **(1.1) Varying assumptions - Standard sample size calculation**
 
@@ -352,7 +527,7 @@ All parameters fixed, except baseline control rate versus number of clusters & i
 # Define fixed parameters
 power <- 0.80
 alpha <- 0.05
-ICC <- 0.20
+ICC <- 0.10
 CV <- 0.1
 m <- 40
 
@@ -365,41 +540,29 @@ results_df <- data.frame(
   n_individuals_per_arm = numeric()
 )
 
-cohen_h <- function(p1, p2) {
-  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
-}
-
 for (p_C in p_C_values) {
   p_I1 <- p_C - 0.25
   p_I2 <- p_C - 0.30
-  
+
   # Skip if intervention rates are invalid (less than 0)
   if (p_I1 < 0 | p_I2 < 0) {
     next
   }
 
-  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * ICC
-
   h_I1_C <- cohen_h(p_I1, p_C)
   h_I2_C <- cohen_h(p_I2, p_C)
 
-  ss1 <- pwr.2p.test(h = h_I1_C, power = power, sig.level = alpha)$n
-  ss2 <- pwr.2p.test(h = h_I2_C, power = power, sig.level = alpha)$n
-  
-  # Use max of the two
-  n_per_arm_rct <- max(ss1, ss2)
-  
-  # Individual sample size
-  n_per_arm_crt <- ceiling(n_per_arm_rct * deff_cv)
-  
-  # Cluster sample size
-  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
-  
+  # Clusters per arm for each contrast (small-sample corrected), take the max
+  n_clusters_per_arm <- max(
+    n_clusters_crt(h_I1_C, m, CV, ICC, power, alpha),
+    n_clusters_crt(h_I2_C, m, CV, ICC, power, alpha)
+  )
+
   # Append results
   results_df <- rbind(results_df, data.frame(
     p_C = p_C,
     n_clusters_per_arm = n_clusters_per_arm,
-    n_individuals_per_arm = n_per_arm_crt
+    n_individuals_per_arm = n_clusters_per_arm * m
   ))
 }
 ```
@@ -430,30 +593,6 @@ ggplot(results_df, aes(x = p_C, y = n_clusters_per_arm * 3)) +
 :::
 
 
-
-::: {.cell}
-
-```{.r .cell-code}
-ggplot(results_df, aes(x = p_C, y = n_individuals_per_arm * 3)) +
-  geom_line(color = "lightgreen", size = 1) +
-  geom_point(color = "lightgreen", size = 2) +
-  labs(
-    title = "Total individuals needed vs. Baseline control rate",
-    x = "Baseline control rate",
-    y = "Total individuals needed (for 3 arms)"
-  ) +
-  theme_minimal() +
-  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
-                     breaks = seq(0.60, 0.85, by = 0.02)) +
-  scale_y_continuous(breaks = seq(0, max(results_df$n_individuals_per_arm * 3), by = 50))
-```
-
-::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-6-1.png){width=672}
-:::
-:::
-
-
 ### **(1.1.2) Varying ICC**
 
 All parameters fixed, except ICC versus number of clusters & individuals needed
@@ -469,8 +608,8 @@ p_C <- 0.75
 m <- 40
 CV <- 0.1
 
-# Range of ICC values to test
-ICC_values <- seq(0.05, 0.25, by = 0.01)
+# Range of ICC values to test, bracketing the pilot range (0.05-0.10)
+ICC_values <- seq(0.02, 0.15, by = 0.01)
 
 results_df <- data.frame(
   ICC = numeric(),
@@ -478,32 +617,23 @@ results_df <- data.frame(
   n_individuals_per_arm = numeric()
 )
 
-cohen_h <- function(p1, p2) {
-  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
-}
-
 for (icc in ICC_values) {
   p_I1 <- p_C - 0.25
   p_I2 <- p_C - 0.30
-  
-  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * icc
-  
+
   h_I1_C <- cohen_h(p_I1, p_C)
   h_I2_C <- cohen_h(p_I2, p_C)
-  
-  ss1 <- pwr.2p.test(h = h_I1_C, power = power, sig.level = alpha)$n
-  ss2 <- pwr.2p.test(h = h_I2_C, power = power, sig.level = alpha)$n
-  
-  n_per_arm_rct <- max(ss1, ss2)
-  
-  n_per_arm_crt <- ceiling(n_per_arm_rct * deff_cv)
-  
-  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
-  
+
+  # Clusters per arm for each contrast (small-sample corrected), take the max
+  n_clusters_per_arm <- max(
+    n_clusters_crt(h_I1_C, m, CV, icc, power, alpha),
+    n_clusters_crt(h_I2_C, m, CV, icc, power, alpha)
+  )
+
   results_df <- rbind(results_df, data.frame(
     ICC = icc,
     n_clusters_per_arm = n_clusters_per_arm,
-    n_individuals_per_arm = n_per_arm_crt
+    n_individuals_per_arm = n_clusters_per_arm * m
   ))
 }
 ```
@@ -523,35 +653,12 @@ ggplot(results_df, aes(x = ICC, y = n_clusters_per_arm * 3)) +
     y = "Total clusters needed (for 3 arms)"
   ) +
   theme_minimal() +
-  scale_x_continuous(breaks = seq(0.05, 0.25, by = 0.01)) +
+  scale_x_continuous(breaks = seq(0.02, 0.15, by = 0.01)) +
   scale_y_continuous(breaks = seq(0, max(results_df$n_clusters_per_arm * 3), by = 2))
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-8-1.png){width=672}
-:::
-:::
-
-
-
-::: {.cell}
-
-```{.r .cell-code}
-ggplot(results_df, aes(x = ICC, y = n_individuals_per_arm * 3)) +
-  geom_line(color = "red", size = 1) +
-  geom_point(color = "red", size = 2) +
-  labs(
-    title = "Total individuals needed vs. ICC",
-    x = "ICC",
-    y = "Total individuals needed (for 3 arms)"
-  ) +
-  theme_minimal() +
-  scale_x_continuous(breaks = seq(0.05, 0.25, by = 0.02)) +
-  scale_y_continuous(breaks = seq(0, max(results_df$n_individuals_per_arm * 3), by = 100))
-```
-
-::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-9-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-7-1.png){width=672}
 :::
 :::
 
@@ -566,53 +673,46 @@ Keep m (cluster size) at 40, to base it on the kids (will not make much differen
 
 Keep the CV at 0.1 (will not make any difference if CV = 0)
 
+Keep ICC at 0.10
+
+Plot delta vs power.
+
 
 ::: {.cell}
 
 ```{.r .cell-code}
 # Define fixed parameters
-power <- 0.80
+power_target <- 0.80
 alpha <- 0.05
 p_C <- 0.75
-ICC <- 0.20
+ICC <- 0.10
 CV <- 0.1
 m <- 40
 
 # Range of effect sizes (percentage point reductions)
 effect_sizes_pp <- seq(15, 25, by = 1)
 
+n_clusters_per_arm <- 13 # planned design
+
 results_effect_df <- data.frame(
   effect_size_pp = numeric(),
-  n_clusters_per_arm = numeric(),
-  n_individuals_per_arm = numeric()
+  power = numeric()
 )
-
-cohen_h <- function(p1, p2) {
-  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
-}
 
 for (delta_pp in effect_sizes_pp) {
   p_I <- p_C - (delta_pp / 100)
-  
+
   # Skip if intervention rate is invalid
   if (p_I < 0) {
     next
   }
-  
-  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * ICC
-  
+
   h <- cohen_h(p_I, p_C)
-  
-  ss <- pwr.2p.test(h = h, power = power, sig.level = alpha)$n
-  
-  n_per_arm_crt <- ceiling(ss * deff_cv)
-  
-  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
-  
+
+  # Small-sample corrected
   results_effect_df <- rbind(results_effect_df, data.frame(
     effect_size_pp = delta_pp,
-    n_clusters_per_arm = n_clusters_per_arm,
-    n_individuals_per_arm = n_per_arm_crt
+    power = power_crt(h, n_clusters_per_arm, m, CV, ICC, alpha, small_sample = TRUE)
   ))
 }
 ```
@@ -623,28 +723,30 @@ for (delta_pp in effect_sizes_pp) {
 ::: {.cell}
 
 ```{.r .cell-code}
-ggplot(results_effect_df, aes(x = effect_size_pp, y = n_clusters_per_arm)) +
+ggplot(results_effect_df, aes(x = effect_size_pp, y = power)) +
+  geom_hline(yintercept = power_target, linetype = "dashed", color = "red") +
   geom_line(color = "darkblue", size = 1) +
   geom_point(color = "darkblue", size = 2) +
   labs(
-    title = "Clusters per arm vs. Effect size",
+    title = "Power vs. Effect size (13 clusters per arm)",
     x = "Effect size (percentage point reduction)",
-    y = "Clusters per arm (pairwise comparison)"
+    y = "Power"
   ) +
   theme_minimal() +
-  scale_x_continuous(breaks = seq(15, 25, by = 2)) +
-  scale_y_continuous(breaks = seq(0, max(results_effect_df$n_clusters_per_arm), by = 1))
+  scale_x_continuous(breaks = seq(15, 25, by = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, 1), breaks = seq(0, 1, by = 0.1))
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-11-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-9-1.png){width=672}
 :::
 :::
 
 
 ### **(1.1.4) Varying Effect size and varying ICC**
 
-3-D plot, varying the effect size (25 pp to 15 pp) & varying ICC (0.1 to 0.3)
+3-D plot, varying the effect size (25 pp to 15 pp) & varying ICC (0.02 to 0.15)
 
 Keep the baseline prescription rate at 75% (control rate)
 
@@ -664,7 +766,7 @@ CV <- 0.1
 m <- 40
 
 # Ranges
-ICC_values <- seq(0.10, 0.30, by = 0.02)
+ICC_values <- seq(0.02, 0.15, by = 0.01)
 effect_sizes_pp <- seq(15, 25, by = 1)
 
 # Create grid
@@ -675,31 +777,20 @@ results_3d <- expand.grid(
 
 results_3d$n_clusters_per_arm <- NA
 
-cohen_h <- function(p1, p2) {
-  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
-}
-
 for (i in 1:nrow(results_3d)) {
   icc <- results_3d$ICC[i]
   delta_pp <- results_3d$effect_size_pp[i]
-  
+
   p_I <- p_C - (delta_pp / 100)
-  
+
   if (p_I < 0) {
     next
   }
-  
-  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * icc
-  
+
   h <- cohen_h(p_I, p_C)
-  
-  ss <- pwr.2p.test(h = h, power = power, sig.level = alpha)$n
-  
-  n_per_arm_crt <- ceiling(ss * deff_cv)
-  
-  n_clusters_per_arm <- ceiling(n_per_arm_crt / m)
-  
-  results_3d$n_clusters_per_arm[i] <- n_clusters_per_arm
+
+  # Small-sample corrected
+  results_3d$n_clusters_per_arm[i] <- n_clusters_crt(h, m, CV, icc, power, alpha)
 }
 ```
 :::
@@ -731,11 +822,11 @@ ggplot(results_3d, aes(x = effect_size_pp, y = ICC, fill = n_clusters_per_arm)) 
     plot.title = element_text(hjust = 0.5, face = "bold")
   ) +
   scale_x_continuous(breaks = seq(15, 25, by = 2)) +
-  scale_y_continuous(breaks = seq(0.10, 0.30, by = 0.02))
+  scale_y_continuous(breaks = seq(0.02, 0.15, by = 0.01))
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-13-1.png){width=960}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-11-1.png){width=960}
 :::
 :::
 
@@ -744,7 +835,7 @@ ggplot(results_3d, aes(x = effect_size_pp, y = ICC, fill = n_clusters_per_arm)) 
 
 Just a quick check - adding more participants per clusters does not really help
 
-Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduction, ICC 0.20
+Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduction, ICC 0.10
 
 
 ::: {.cell}
@@ -754,17 +845,12 @@ Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduc
 n_clusters_per_arm <- 13  # Fixed number of clusters
 p_C <- 0.75
 p_I <- 0.50  # 25 pp reduction
-ICC <- 0.20
+ICC <- 0.10
 CV <- 0.1
 alpha <- 0.05
 
 # Range of cluster sizes to explore
 cluster_sizes <- seq(20, 200, by = 10)
-
-# Function to calculate power for given cluster size
-cohen_h <- function(p1, p2) {
-  2 * (asin(sqrt(p1)) - asin(sqrt(p2)))
-}
 
 results_cluster_size <- data.frame(
   cluster_size = numeric(),
@@ -775,21 +861,20 @@ results_cluster_size <- data.frame(
 
 h <- cohen_h(p_I, p_C)
 
-for (m in cluster_sizes) {
+# NOTE: loop variable is m_j, not m, so that the global cluster size m (= 40) is not overwritten
+for (m_j in cluster_sizes) {
   # Design effect for this cluster size
-  deff_cv <- 1 + ((m * (1 + CV^2)) - 1) * ICC
-  
+  deff_cv <- deff_cv_fun(m_j, CV, ICC)
+
   # Total individuals per arm
-  total_n <- n_clusters_per_arm * m
-  
-  # Effective sample size (accounting for clustering)
-  effective_n <- total_n / deff_cv
-  
-  # Calculate achieved power
-  power_achieved <- pwr.2p.test(h = h, n = effective_n, sig.level = alpha)$power
-  
+  total_n <- n_clusters_per_arm * m_j
+
+  # Achieved power, small-sample corrected (df depend on clusters, not on cluster size,
+  # which is exactly why adding individuals per cluster helps so little)
+  power_achieved <- power_crt(h, n_clusters_per_arm, m_j, CV, ICC, alpha)
+
   results_cluster_size <- rbind(results_cluster_size, data.frame(
-    cluster_size = m,
+    cluster_size = m_j,
     total_n_per_arm = total_n,
     achieved_power = power_achieved,
     deff = deff_cv
@@ -819,7 +904,7 @@ ggplot(results_cluster_size, aes(x = cluster_size, y = achieved_power)) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-15-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-13-1.png){width=672}
 :::
 :::
 
@@ -834,67 +919,75 @@ Note: We simulate a two-arm trial setup (not three-arm), since power/sample size
 
 **Data-generating model (per cluster):**
 
--   For arm i (0=control, 1=intervention) and cluster j: Y_ij ∼ Binomial(m_ij, p_ij), logit⁡(p_ij) = β0 + β1_i + u_j , where u_j is a cluster random effect with mean 0 and variance σ\^2_b
+- For arm i (0=control, 1=intervention) and cluster j: Y_ij ∼ Binomial(m_ij, p_ij), logit⁡(p_ij) = β0 + β1_i + u_j , where u_j is a cluster random effect with mean 0 and variance σ\^2_b
 
-    -   ​Binomial(m_ij, p_ij): Conditional on p_ij, we assume each of the m_ij individuals in that cluster are independent Bernoulli trials with probability p_ij. So Y_ij is a binomial draw with that probability, for the cluster-level.
+  - ​Binomial(m_ij, p_ij): Conditional on p_ij, we assume each of the m_ij individuals in that cluster are independent Bernoulli trials with probability p_ij. So Y_ij is a binomial draw with that probability, for the cluster-level.
 
-        -   A Bernoulli trial is a random event with two outcomes (success/failure), with the same, independent, probability of success every time.
+    - A Bernoulli trial is a random event with two outcomes (success/failure), with the same, independent, probability of success every time.
 
-        -   Independence assumption (within-cluster): Whether one person gets the prescription doesn’t change the probability for another person in the same cluster (once p_ij is fixed). The correlation between people’s outcomes in the same cluster comes entirely from them sharing the same p_ij.
+    - Independence assumption (within-cluster): Whether one person gets the prescription doesn’t change the probability for another person in the same cluster (once p_ij is fixed). The correlation between people’s outcomes in the same cluster comes entirely from them sharing the same p_ij.
 
-        -   =\> Y_ij can be any integer from 0 to m_ij. E.g. if m_ij =42 and p_ij =0.50, then Y_ij is the total number of prescriptions in that cluster, drawn from a binomial distribution with 42 trials and 50% success probability.
+    - =\> Y_ij can be any integer from 0 to m_ij. E.g. if m_ij =42 and p_ij =0.50, then Y_ij is the total number of prescriptions in that cluster, drawn from a binomial distribution with 42 trials and 50% success probability.
 
-    -   logit⁡(p_ij) = β0 + β1_i + u_j:
+  - logit⁡(p_ij) = β0 + β1_i + u_j:
 
-        -   Using the logit link maps probability p ∈ (0,1) to the whole real line, so we can model it as a linear predictor.
+    - Using the logit link maps probability p ∈ (0,1) to the whole real line, so we can model it as a linear predictor.
 
-        -   β0 is the baseline log-odds (the logit of the control probability for a *typical* cluster, i.e. when u_j = 0), representing the the marginal cluster-specific probability.
+    - β0 is the baseline log-odds (the logit of the control probability for a *typical* cluster, i.e. when u_j = 0), representing the the marginal cluster-specific probability.
 
-        -   β1_i encodes the treatment effect and is a log-odds difference; exp⁡(β1) is the *conditional odds ratio* comparing treatment vs control for the *same cluster* (holding u_j fixed).
+    - β1_i encodes the treatment effect and is a log-odds difference; exp⁡(β1) is the *conditional odds ratio* comparing treatment vs control for the *same cluster* (holding u_j fixed).
 
-        -   u_j is the cluster random intercept (a cluster-level shift on the log-odds scale). It captures unobserved cluster-level factors (e.g. prescriber tendency) that move all individuals in the cluster up/down in log-odds. Typically, u_j has mean 0 and variance σ\^2_b and is independent across clusters (see above). The random intercept does not change the conditional treatment effect, it only shifts the baseline log-odds for that whole cluster. In other words, the *difference in log-odds* between arms for the same cluster is always constant, but the *actual probabilities* shift up/down with u_j. For clusters with positive u_j both arms have higher probabilities; for negative u_j both are lower.
+    - u_j is the cluster random intercept (a cluster-level shift on the log-odds scale). It captures unobserved cluster-level factors (e.g. prescriber tendency) that move all individuals in the cluster up/down in log-odds. Typically, u_j has mean 0 and variance σ\^2_b and is independent across clusters (see above). The random intercept does not change the conditional treatment effect, it only shifts the baseline log-odds for that whole cluster. In other words, the *difference in log-odds* between arms for the same cluster is always constant, but the *actual probabilities* shift up/down with u_j. For clusters with positive u_j both arms have higher probabilities; for negative u_j both are lower.
 
 **ICC on log-odds scale:**
 
--   ICC = *p = rho* = σ\^2_b / (σ\^2_b+(π\^2/3))
+- ICC = *p = rho* = σ\^2_b / (σ\^2_b+(π\^2/3))
 
--   The ICC consists of individual-level variance (noise) and between-cluster variance (noise), in the sense of: between-cluster variance / total variance. The between-cluster variance approximates the cluster random effect variance (σ\^2_b)
+- The ICC consists of individual-level variance (noise) and between-cluster variance (noise), in the sense of: between-cluster variance / total variance. The between-cluster variance approximates the cluster random effect variance (σ\^2_b)
 
--   In logistic models, the individual level variation is usually fixed at π\^2/3 (3.29)
+- In logistic models, the individual level variation is usually fixed at π\^2/3 (3.29)
 
--   So, focusing on the cluster random effect variance (σ\^2_b), we can derive it from the formula above as: σ_b = *sigma_b* = sqrt((ICC(π\^2/3))/(1−ICC))
+- So, focusing on the cluster random effect variance (σ\^2_b), we can derive it from the formula above as: σ_b = *sigma_b* = sqrt((ICC(π\^2/3))/(1−ICC))
 
--   (If there’s additional within-site variation over time, i.e. baseline period or SW-CRT, we include σ\^2_b_p, typically as a fraction of σ\^2_b, e.g., half the site-level variance).
+- (If there’s additional within-site variation over time, i.e. baseline period or SW-CRT, we include σ\^2_b_p, typically as a fraction of σ\^2_b, e.g., half the site-level variance).
+
+**Important - the two ICC scales, and which one we specify:**
+
+- The formula above defines the ICC on the **latent (log-odds) scale**: the ICC of the unobserved continuous logistic variable underlying the binary outcome. This is *not* the same quantity as the ordinary **proportion-scale** ICC (the correlation between two individuals' observed 0/1 outcomes in the same cluster), which is what the design effect in chapter 1 requires, what published ICC tables report, and what our pilot data give us.
+
+- The two differ substantially. At a control prevalence of 75%: a proportion-scale ICC of 0.05 corresponds to a latent ρ of 0.078; 0.10 corresponds to 0.153; 0.15 corresponds to 0.226. Conversely, the latent ρ of 0.20 that this document previously used corresponds to a proportion-scale ICC of only 0.132 - i.e. the earlier simulations were markedly less conservative than the chapter 1 formula suggested, and the two chapters' ICC axes were not comparable.
+
+- **We therefore specify the ICC on the proportion scale everywhere** (argument `icc`), and convert internally to the latent scale via `prop_icc_to_latent()` at the single point where the simulation needs σ_b. Chapters 1, 2 and 3 now all take the same number as input and their ICC axes are directly comparable.
 
 **Cluster effect distributions:**
 
--   While ICC is the proportion of the total variance (in the latent scale) that comes from between-cluster differences ("what fraction of the total variability is due to between-cluster differences"), the σ\^2_b is an absolute variance ("How big the cluster intercept spread is in log-odds units" or "how much variation there is in prescription tendency across clusters") and can have different shapes.
+- While ICC is the proportion of the total variance (in the latent scale) that comes from between-cluster differences ("what fraction of the total variability is due to between-cluster differences"), the σ\^2_b is an absolute variance ("how much variation there is in prescription tendency across clusters") and can have different shapes.
 
--   GLMM assumes normal distribution, but reality is often skewed - esp. with few clusters! Simulate three scenarios including a realistic/skewed/conservative scenario and see if GLMM breaks (as in paper above):
+- GLMM assumes normal distribution, but reality is often skewed - esp. with few clusters! Simulate three scenarios including a realistic/skewed/conservative scenario and see if GLMM breaks (as in paper above):
 
--   a\) Normal: u_j ∼ N(0, σ\^2_b)
+- a\) Normal: u_j ∼ N(0, σ\^2_b)
 
-    -   Symmetric, bell-shaped, skewness = 0, kurtosis = 0.
+  - Symmetric, bell-shaped, skewness = 0, kurtosis = 0.
 
--   b\) Gamma (skewed): generate a_j ∼ Gamma(shape=2,scale=1), then set u_j ​= σ_b(​(a_j​−2)/sqrt(2))
+- b\) Gamma (skewed): generate a_j ∼ Gamma(shape=2,scale=1), then set u_j ​= σ_b(​(a_j​−2)/sqrt(2))
 
-    -   A shape parameter of 2 give a distribution with skew 1.4 and kurtosis 3, i.e., positive skew (some clusters much higher tendency than average)
+  - A shape parameter of 2 give a distribution with skew 1.4 and kurtosis 3, i.e., positive skew (some clusters much higher tendency than average)
 
--   c\) Uniform: u_j ∼ Uniform(−sqrt(3)σ_b, sqrt(3)σ_b)
+- c\) Uniform: u_j ∼ Uniform(−sqrt(3)σ_b, sqrt(3)σ_b)
 
-    -   Skewness = 0 (perfectly symmetric), Kurtosis = −6/5 (lighter tails than normal), no extreme values, overall flat, all clusters are evenly spread; to test if GLMMs are sensitive to lack of tail weight, i.e., whether they rely on the normal distribution’s tails to stabilize estimates.
+  - Skewness = 0 (perfectly symmetric), Kurtosis = −6/5 (lighter tails than normal), no extreme values, overall flat, all clusters are evenly spread; to test if GLMMs are sensitive to lack of tail weight, i.e., whether they rely on the normal distribution’s tails to stabilize estimates.
 
 **Cluster sizes** m_ij​:
 
--   Allow for varying cluster size, i.e. varying coefficient of variation (CV) of cluster sizes, using same approach as they did: They sampled cluster sizes so that m_ij = 2 + δ_ij,​ drawn from a Negative Binomial:
+- Allow for varying cluster size, i.e. varying coefficient of variation (CV) of cluster sizes, using same approach as they did: They sampled cluster sizes so that m_ij = 2 + δ_ij,​ drawn from a Negative Binomial:
 
-    -   δ_ij ​∼ NegBin(size = (m-2)\^2/(s\^2-(m-2)), p = m-2/s\^2)
+  - δ_ij ​∼ NegBin(size = (m-2)\^2/(s\^2-(m-2)), p = m-2/s\^2)
 
-    -   where s is the SD of cluster sizes (CV = s/m).
+  - where s is the SD of cluster sizes (CV = s/m).
 
-    -   This yields a minimum cluster size of 3. (note: they wrote no.offails and prob.offail; but the above should represent the same).
+  - This yields a minimum cluster size of 3. (note: they wrote no.offails and prob.offail; but the above should represent the same).
 
-    -   δ is in a way the random component added to 2 to get the cluster size (of min 3).
+  - δ is in a way the random component added to 2 to get the cluster size (of min 3).
 
 ## **(2.2) Create main functions and simulate one dataset**
 
@@ -907,6 +1000,96 @@ icc_to_sigma <- function(rho){
   if(rho<=0) return(0)
   sigma_b <- sqrt( (rho * (pi^2/3)) / (1 - rho) )
   return(sigma_b)
+}
+
+# 1b) convert a PROPORTION-scale ICC into the equivalent LATENT (logit-scale) ICC.
+#
+# These are two different quantities and must not be used interchangeably:
+#   - proportion scale: the ordinary correlation between two individuals' binary (0/1)
+#     outcomes in the same cluster. This is what the DEFF formula in chapter 1 needs,
+#     what published ICC tables report, and what our pilot data give us.
+#   - latent scale: rho = sigma_b^2 / (sigma_b^2 + pi^2/3), i.e. the ICC of the
+#     unobserved continuous logistic variable underlying the binary outcome. This is
+#     what icc_to_sigma() inverts to get the random-intercept SD for the simulation.
+#
+# For a cluster-specific probability p_j = plogis(qlogis(p0) + u_j), the induced
+# proportion-scale ICC is Var(p_j) / (E[p_j] * (1 - E[p_j])). We compute that by
+# numerical integration over u_j ~ N(0, sigma_b) and invert it for the latent rho.
+# Deterministic (no simulation), so results are exactly reproducible.
+latent_icc_to_prop <- function(rho_latent, p0){
+  if(rho_latent <= 0) return(0)
+  sigma_b <- icc_to_sigma(rho_latent)
+  b0 <- qlogis(p0)
+  Ep  <- integrate(function(u) plogis(b0 + u) * dnorm(u, 0, sigma_b),
+                   -10*sigma_b, 10*sigma_b)$value
+  Ep2 <- integrate(function(u) plogis(b0 + u)^2 * dnorm(u, 0, sigma_b),
+                   -10*sigma_b, 10*sigma_b)$value
+  (Ep2 - Ep^2) / (Ep * (1 - Ep))
+}
+
+prop_icc_to_latent <- function(icc_prop, p0){
+  if(icc_prop <= 0) return(0)
+  uniroot(function(r) latent_icc_to_prop(r, p0) - icc_prop,
+          interval = c(1e-6, 0.95), tol = 1e-9)$root
+}
+
+# 1c) The conversion above assumes u_j is NORMAL. Our conservative default distribution is
+# gamma (skewed), and a skewed u_j with the same SD induces a DIFFERENT proportion-scale ICC:
+# at sigma_b = 0.771 the normal gives ICC 0.100 but the gamma gives only 0.069. Simply reusing
+# the normal-based sigma_b therefore silently simulates a lower ICC than requested, i.e. the
+# "conservative" skewed scenario would in fact be run at a more favourable ICC.
+#
+# We therefore solve for sigma_b separately for each distribution, so that "icc = 0.10" means
+# a realised proportion-scale ICC of 0.10 whichever u_j distribution is used. Both moments are
+# obtained by quadrature over the actual distribution of u_j, so this stays deterministic.
+icc_prop_given_sigma <- function(sigma_b, p0, dist = c("normal","gamma","uniform")){
+  dist <- match.arg(dist)
+  if(sigma_b <= 0) return(0)
+  b0 <- qlogis(p0)
+  mom <- function(k){
+    if(dist == "normal"){
+      integrate(function(u) plogis(b0 + u)^k * dnorm(u, 0, sigma_b),
+                -10*sigma_b, 10*sigma_b)$value
+    } else if(dist == "gamma"){
+      # u_j = sigma_b * (a - 2)/sqrt(2), with a ~ Gamma(shape = 2, scale = 1)
+      integrate(function(a) plogis(b0 + sigma_b*(a-2)/sqrt(2))^k * dgamma(a, shape=2, scale=1),
+                0, Inf)$value
+    } else {
+      cut <- sqrt(3) * sigma_b
+      integrate(function(u) plogis(b0 + u)^k / (2*cut), -cut, cut)$value
+    }
+  }
+  Ep <- mom(1); Ep2 <- mom(2)
+  (Ep2 - Ep^2) / (Ep * (1 - Ep))
+}
+
+# sigma_b that yields the requested PROPORTION-scale ICC under the given u_j distribution
+sigma_b_for_icc <- function(icc_prop, p0, dist = "normal"){
+  if(icc_prop <= 0) return(0)
+  uniroot(function(s) icc_prop_given_sigma(s, p0, dist) - icc_prop,
+          interval = c(1e-6, 10), tol = 1e-10)$root
+}
+
+# 1d) MARGINAL (population-average) prevalence implied by a linear predictor, E[plogis(lp + u_j)]
+marginal_p <- function(lp, sigma_b, dist = c("normal","gamma","uniform")){
+  dist <- match.arg(dist)
+  if(sigma_b <= 0) return(plogis(lp))
+  if(dist == "normal"){
+    integrate(function(u) plogis(lp+u)*dnorm(u, 0, sigma_b), -10*sigma_b, 10*sigma_b)$value
+  } else if(dist == "gamma"){
+    integrate(function(a) plogis(lp + sigma_b*(a-2)/sqrt(2))*dgamma(a, shape=2, scale=1), 0, Inf)$value
+  } else {
+    cut <- sqrt(3)*sigma_b
+    integrate(function(u) plogis(lp+u)/(2*cut), -cut, cut)$value
+  }
+}
+
+# 1e) Choose beta0 and beta1 so the MARGINAL prevalences are exactly p0 and p1.
+# This matters more than it looks. Setting beta0 = qlogis(p0) and beta1 = log(OR) makes p0 and p1 the CLUSTER-SPECIFIC probabilities (those of a cluster with u_j = 0). Because the logistic link is non-linear, averaging over u_j pulls the marginal prevalences toward 0.5: at ICC 0.10 the nominal "0.75 -> 0.50, 25 pp" actually generates a marginal 0.726 -> 0.500, i.e. only 22.6 pp.
+calibrate_marginal <- function(p0, p1, sigma_b, dist = "normal"){
+  b0 <- uniroot(function(b) marginal_p(b, sigma_b, dist) - p0, c(-20, 20), tol = 1e-10)$root
+  b1 <- uniroot(function(b) marginal_p(b0 + b, sigma_b, dist) - p1, c(-20, 20), tol = 1e-10)$root
+  c(beta0 = b0, beta1 = b1)
 }
 
 # 2) compute beta0 for given control prevalence p0
@@ -948,11 +1131,11 @@ generate_cluster_sizes <- function(n_clusters, m, CV){
   mu_delta <- m - 2
   var_delta <- s^2
   if(var_delta <= mu_delta){
-    # Negative Binomial requires variance > mean. So, this is an impossible NB parameterization
-    # If so, fall back to a discrete uniform around m
-    low <- max(3, floor(m - s*1.5))
-    high <- ceiling(m + s*1.5)
-    out <- pmax(3, round(runif(n_clusters, low, high)))
+    # Negative Binomial requires variance > mean, so this parameterization is impossible.
+    # NOTE: this is the branch that actually runs at our design values (m = 40, CV = 0.1:
+    # var_delta = 16 is well below mu_delta = 38), i.e. the NB path documented in chapter 2.1 is never used here. We fall back to a uniform around m. The half-width must be sqrt(3)*s, not 1.5*s: a uniform on m +/- w has SD w/sqrt(3), so w = 1.5*s gives SD 0.87*s and under-delivers the requested CV (0.088 instead of 0.100).
+    w <- sqrt(3) * s
+    out <- pmax(3, round(runif(n_clusters, m - w, m + w)))
     return(out)
   }
   size_nb <- (mu_delta^2) / (var_delta - mu_delta) # see formula above
@@ -971,17 +1154,19 @@ CV <- 0.1
 p0 <- 0.75
 p1 <- 0.50
 OR <- p0_p1_to_OR(p0, p1) # compute OR from p0 and p1
-rho <- 0.20 # ICC
+icc <- 0.10 # ICC on the PROPORTION scale (pilot data); sigma_b derived for the chosen re_dist below
 re_dist <- "uniform"
 
 # Simulate
 set.seed(20250809)
-sigma_b <- icc_to_sigma(rho)
+sigma_b <- sigma_b_for_icc(icc, p0, re_dist)
 u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
 sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
 arm_assign <- sample(rep(0:1, length.out = n_clusters))
-beta0 <- p_to_beta0(p0)
-beta1 <- log(OR)
+# beta0/beta1 calibrated so the MARGINAL prevalences really are p0 and p1 (see helper 1e above)
+betas <- calibrate_marginal(p0, p1, sigma_b, re_dist)
+beta0 <- betas["beta0"]
+beta1 <- betas["beta1"]
 y <- integer(n_clusters)
 
 for(j in seq_len(n_clusters)){ # iterate over each cluster
@@ -1004,32 +1189,32 @@ df_sim
 
 ```
    cluster arm size  y
-1        1   1   39 15
-2        2   0   35 32
-3        3   1   37 19
-4        4   0   41 33
-5        5   0   39 29
-6        6   0   41 37
+1        1   1   39 16
+2        2   0   34 30
+3        3   1   36 17
+4        4   0   41 34
+5        5   0   39 30
+6        6   0   42 37
 7        7   0   38 29
-8        8   0   45 31
-9        9   0   43 28
-10      10   1   43 27
-11      11   1   44 33
-12      12   1   45 20
-13      13   0   39 25
-14      14   1   39 32
-15      15   1   41 29
-16      16   1   41 35
-17      17   0   40 31
-18      18   1   36 33
-19      19   0   36 25
-20      20   1   38 12
-21      21   0   37 30
-22      22   1   41 21
-23      23   1   41  7
-24      24   0   43 35
-25      25   1   44 39
-26      26   0   39 20
+8        8   0   46 33
+9        9   0   43 31
+10      10   1   44 26
+11      11   1   45 33
+12      12   1   46 22
+13      13   0   39 26
+14      14   1   39 31
+15      15   1   41 28
+16      16   1   42 34
+17      17   0   40 32
+18      18   1   35 31
+19      19   0   35 26
+20      20   1   37 12
+21      21   0   36 30
+22      22   1   42 21
+23      23   1   41  9
+24      24   0   44 36
+25      25   1   44 38
+26      26   0   39 22
 ```
 
 
@@ -1055,7 +1240,7 @@ ggplot(df_sim, aes(x = factor(cluster), y = size, fill = factor(arm))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-16-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-14-1.png){width=672}
 :::
 :::
 
@@ -1068,9 +1253,9 @@ y = number of individual-level successes (binary=1) observed in the cluster, i.e
 
 NOTES:
 
--   Use cluster-level analysis (unweighted t-test on log-odds, with 0.5 continuity correction, as per guidance according to Thompson & Leyrat & al -\> "clan" command)
+- Use cluster-level analysis (unweighted t-test on log-odds, with 0.5 continuity correction, as per guidance according to Thompson & Leyrat & al -\> "clan" command)
 
--   Keep gamma distribution, simulate 500-1000 trials
+- Keep gamma distribution, simulate 500-1000 trials
 
 ### **(2.3.1) Create function**
 
@@ -1083,7 +1268,7 @@ simulate_power <- function(n_clusters = 26,
                            CV = 0.1,
                            p0 = 0.75, 
                            p1 = 0.50, 
-                           rho = 0.20,
+                           icc = 0.10,
                            re_dist = "gamma", 
                            n_sim = 1000,
                            alpha = 0.05, 
@@ -1091,10 +1276,11 @@ simulate_power <- function(n_clusters = 26,
   set.seed(seed)
   
   # Compute derived parameters
-  sigma_b <- icc_to_sigma(rho)
-  beta0 <- p_to_beta0(p0)
-  OR <- p0_p1_to_OR(p0, p1)
-  beta1 <- log(OR)
+  sigma_b <- sigma_b_for_icc(icc, p0, re_dist)
+  # calibrate so the MARGINAL prevalences are p0 and p1 (see helper 1e in chapter 2.2)
+  betas <- calibrate_marginal(p0, p1, sigma_b, re_dist)
+  beta0 <- betas["beta0"]
+  beta1 <- betas["beta1"]
   
   p_values <- numeric(n_sim)
   
@@ -1139,7 +1325,7 @@ power_estimate <- simulate_power(n_clusters = 26,
                                  CV = 0.1,
                                  p0 = 0.75,
                                  p1 = 0.50,
-                                 rho = 0.20,
+                                 icc = 0.10,
                                  re_dist = "gamma",
                                  n_sim = 1000)
 
@@ -1149,7 +1335,7 @@ cat("Estimated power:", round(power_estimate, 3), "\n")
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Estimated power: 0.79 
+Estimated power: 0.841 
 ```
 
 
@@ -1175,7 +1361,7 @@ results <- grid %>%
                                 CV = 0.1,
                                 p0 = p0,
                                 p1 = p1,
-                                rho = 0.2,
+                                icc = 0.10,
                                 re_dist = "gamma",
                                 n_sim = 1000)) %>%
   ungroup()
@@ -1203,7 +1389,7 @@ ggplot(results, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-17-1.png){width=672}
 :::
 :::
 
@@ -1215,16 +1401,16 @@ ggplot(results, aes(x = p1, y = power, color = factor(p0))) +
 
 ```{.r .cell-code}
 # Vector of ICC values to test
-icc_values <- seq(0.05, 0.25, by = 0.02)
+icc_values <- seq(0.02, 0.15, by = 0.01)
 
 # Run power simulations for each ICC
-power_results <- sapply(icc_values, function(rho) {
+power_results <- sapply(icc_values, function(icc) {
   simulate_power(n_clusters = 26,
                  m_mean = 40,
                  CV = 0.1,
                  p0 = 0.75,
                  p1 = 0.50,
-                 rho = rho,
+                 icc = icc,
                  re_dist = "gamma",
                  n_sim = 1000,
                  alpha = 0.05,
@@ -1238,17 +1424,17 @@ df_power_icc <- data.frame(ICC = icc_values, Power = power_results)
 ggplot(df_power_icc, aes(x = ICC, y = Power)) +
   geom_line(color = "darkred", size = 1.2) +
   geom_point(color = "firebrick") +
-  labs(title = "Power Curve by ICC (two-arm/pair-wise comparison)",
-       x = "Intraclass Correlation (ICC)",
+  labs(title = "Power curve by ICC, proportion scale (two-arm/pair-wise comparison)",
+       x = "Intraclass correlation, proportion scale (ICC)",
        y = "Estimated Power") +
-  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
-                     limits = c(0.70, 1),
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
   theme_minimal()
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-18-1.png){width=672}
 :::
 :::
 
@@ -1260,7 +1446,7 @@ ggplot(df_power_icc, aes(x = ICC, y = Power)) +
 
 ```{.r .cell-code}
 # Vector of cluster counts to test
-n_clusters_vec <- seq(22, 36, by = 1)
+n_clusters_vec <- seq(10, 30, by = 1)
 
 # Run power simulations for each cluster count
 power_results <- sapply(n_clusters_vec, function(nc) {
@@ -1269,7 +1455,7 @@ power_results <- sapply(n_clusters_vec, function(nc) {
                  CV = 0.1,
                  p0 = 0.75,
                  p1 = 0.50,
-                 rho = 0.20,
+                 icc = 0.10,
                  re_dist = "gamma",
                  n_sim = 5000,
                  alpha = 0.05,
@@ -1286,15 +1472,15 @@ ggplot(df_power_css, aes(x = Cluster_ss, y = Power)) +
   labs(title = "Power vs Number of total clusters (two-arm/pair-wise comparison)",
        x = "Total number of clusters (two-arm trial)",
        y = "Estimated power") +
-  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
-                     limits = c(0.70, 1),
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
-  scale_x_continuous(breaks = seq(22, 36, by = 1)) +
+  scale_x_continuous(breaks = seq(10, 30, by = 2)) +
   theme_minimal()
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-21-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-19-1.png){width=672}
 :::
 :::
 
@@ -1314,7 +1500,7 @@ power_results <- sapply(m_mean_vec, function(n) {
                  CV = 0.1,
                  p0 = 0.75,
                  p1 = 0.50,
-                 rho = 0.20,
+                 icc = 0.10,
                  re_dist = "gamma",
                  n_sim = 1000,
                  alpha = 0.05,
@@ -1331,15 +1517,15 @@ ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
   labs(title = "Power vs Number of total individuals (two-arm/pair-wise comparison)",
        x = "Total number of individuals (two-arm trial)",
        y = "Estimated power") +
-  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
-                     limits = c(0.70, 1),
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(breaks = seq(10, 180, by = 10)) +
   theme_minimal()
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-22-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-20-1.png){width=672}
 :::
 :::
 
@@ -1348,9 +1534,9 @@ ggplot(df_power_iss, aes(x = Individual_ss, y = Power)) +
 
 **NOTES:**
 
--   As per guidance according to Thompson & Leyrat & al: GLMM with restricted pseudo-likelihood and reduced degree of freedom (minus all covariates in the model)
+- As per guidance according to Thompson & Leyrat & al: GLMM with restricted pseudo-likelihood and reduced degree of freedom (minus all covariates in the model)
 
--   Keep gamma distribution throughout
+- Keep gamma distribution throughout
 
 ### **(2.4.1) Create function**
 
@@ -1363,17 +1549,18 @@ simulate_power_glmmPQL <- function(n_clusters = 26,
                                    CV = 0.1,
                                    p0 = 0.75, 
                                    p1 = 0.50, 
-                                   rho = 0.20,
+                                   icc = 0.10,
                                    re_dist = "gamma", 
                                    n_sim = 1000,
                                    alpha = 0.05, 
                                    seed = 20250809) {
   set.seed(seed)
   
-  sigma_b <- icc_to_sigma(rho)
-  beta0 <- p_to_beta0(p0)
-  OR <- p0_p1_to_OR(p0, p1)
-  beta1 <- log(OR)
+  sigma_b <- sigma_b_for_icc(icc, p0, re_dist)
+  # calibrate so the MARGINAL prevalences are p0 and p1 (see helper 1e in chapter 2.2)
+  betas <- calibrate_marginal(p0, p1, sigma_b, re_dist)
+  beta0 <- betas["beta0"]
+  beta1 <- betas["beta1"]
   
   p_values <- numeric(n_sim)
   
@@ -1438,7 +1625,7 @@ power_estimate <- simulate_power_glmmPQL(n_clusters = 26,
                                          CV = 0.1,
                                          p0 = 0.75,
                                          p1 = 0.50,
-                                         rho = 0.20,
+                                         icc = 0.10,
                                          re_dist = "gamma",
                                          n_sim = 1000)
 
@@ -1448,7 +1635,7 @@ cat("Estimated power (GLMM):", round(power_estimate, 3), "\n")
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Estimated power (GLMM): 0.829 
+Estimated power (GLMM): 0.891 
 ```
 
 
@@ -1474,7 +1661,7 @@ grid_glmm$power <- map2_dbl(grid_glmm$p0, grid_glmm$p1, ~ simulate_power_glmmPQL
   CV = 0.1,
   p0 = .x,
   p1 = .y,
-  rho = 0.2,
+  icc = 0.10,
   re_dist = "gamma",
   n_sim = 300 # reduced for speed
 ))
@@ -1495,7 +1682,7 @@ ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-23-1.png){width=672}
 :::
 :::
 
@@ -1506,15 +1693,15 @@ ggplot(grid_glmm, aes(x = p1, y = power, color = factor(p0))) +
 ::: {.cell}
 
 ```{.r .cell-code}
-icc_values <- seq(0.05, 0.25, by = 0.02)
+icc_values <- seq(0.02, 0.15, by = 0.01)
 
-power_results_glmm <- sapply(icc_values, function(rho) {
+power_results_glmm <- sapply(icc_values, function(icc) {
   simulate_power_glmmPQL(n_clusters = 26,
                  m_mean = 40,
                  CV = 0.1,
                  p0 = 0.75,
                  p1 = 0.50,
-                 rho = rho,
+                 icc = icc,
                  re_dist = "gamma",
                  n_sim = 300, # reduced for speed
                  alpha = 0.05,
@@ -1526,17 +1713,17 @@ df_power_icc_glmm <- data.frame(ICC = icc_values, Power = power_results_glmm)
 ggplot(df_power_icc_glmm, aes(x = ICC, y = Power)) +
   geom_line(color = "darkred", size = 1.2) +
   geom_point(color = "firebrick") +
-  labs(title = "Power Curve by ICC (two-arm/pair-wise comparison, GLMM)",
-       x = "Intraclass Correlation (ICC)",
+  labs(title = "Power curve by ICC, proportion scale (two-arm/pair-wise comparison, GLMM)",
+       x = "Intraclass correlation, proportion scale (ICC)",
        y = "Estimated Power") +
-  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
-                     limits = c(0.70, 1),
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
   theme_minimal()
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-26-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-24-1.png){width=672}
 :::
 :::
 
@@ -1547,7 +1734,7 @@ ggplot(df_power_icc_glmm, aes(x = ICC, y = Power)) +
 ::: {.cell}
 
 ```{.r .cell-code}
-n_clusters_vec <- seq(22, 36, by = 1)
+n_clusters_vec <- seq(10, 30, by = 1)
 
 power_results_glmm <- sapply(n_clusters_vec, function(nc) {
   simulate_power_glmmPQL(n_clusters = nc,
@@ -1555,7 +1742,7 @@ power_results_glmm <- sapply(n_clusters_vec, function(nc) {
                  CV = 0.1,
                  p0 = 0.75,
                  p1 = 0.50,
-                 rho = 0.20,
+                 icc = 0.10,
                  re_dist = "gamma",
                  n_sim = 300, # reduced for speed
                  alpha = 0.05,
@@ -1570,56 +1757,396 @@ ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
   labs(title = "Power vs Number of total clusters (two-arm/pair-wise comparison, GLMM)",
        x = "Total number of clusters (two-arm trial)",
        y = "Estimated power") +
-  scale_y_continuous(breaks = seq(0.70, 1, by = 0.1),
-                     limits = c(0.70, 1),
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1),
+                     limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
-  scale_x_continuous(breaks = seq(22, 36, by = 1)) +
+  scale_x_continuous(breaks = seq(10, 30, by = 2)) +
   theme_minimal()
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-27-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-25-1.png){width=672}
 :::
 :::
 
+
+## **(2.5) Powering on a smaller effect: power vs. delta at the planned design**
+
+The 25 pp reduction assumed so far is optimistic. Now that the ICC is lower than originally thought, we can power for a lower, more realistic but still clincally meaningful delta, while keeping the planned design of **13 vs 13 clusters** for the main pairwise comparison.
+
+Everything is held fixed at the planned design - ICC 0.10 (proportion scale), 13 clusters per arm, mean cluster size 40, CV 0.1, control rate 75%, alpha 0.05 - and only the effect size varies, from 25 pp down to 10 pp. The horizontal line marks 80% power; where each curve crosses it is that method's minimum detectable effect.
+
+Five curves are shown, because they do not agree and the differences matter:
+
+- **Closed formula** (chapter 1, with the small-sample t correction).
+
+- **Simulation, cluster-level analysis, symmetric (normal) cluster effects.**
+
+- **Simulation, cluster-level analysis, skewed (gamma) cluster effects** - our conservative default.
+
+- **Simulation, GLMM, skewed cluster effects** (glmmPQL with reduced degrees of freedom)
+
+- **Simulation, GLMM, symmetric (normal) cluster effects** (glmmPQL with reduced degrees of freedom)
+
+All simulations are calibrated so that (a) the realised proportion-scale ICC really is 0.10 under the distribution used, and (b) the marginal (population-average) prevalences really are 75% and 75% minus delta, so that all five curves are answering the same question.
+
+Read the gap between the symmetric and the skewed curves as the cost of the distributional assumption, and the gap between the two skewed curves as the cost of the analysis method. The former is the larger open question for this trial.
+
+
+::: {.cell}
+
+```{.r .cell-code}
+## Design held fixed at the planned trial
+n_clusters_total <- 26   # 13 vs 13, the main pairwise comparison
+m_mean_fix <- 40
+CV_fix <- 0.1
+p0_fix <- 0.75
+ICC_fix <- 0.10          # proportion scale
+alpha_fix <- 0.05
+target_power <- 0.80
+re_dist_fix <- "gamma"   # conservative default
+
+# Effect sizes: 25 pp down to 10 pp
+deltas_pp <- seq(25, 10, by = -1)
+
+## (a) Closed formula, small-sample corrected (helpers from chapter 1)
+power_formula <- sapply(deltas_pp, function(d)
+  power_crt(cohen_h(p0_fix - d/100, p0_fix),
+            n_clusters_arm = n_clusters_total/2,
+            m = m_mean_fix, CV = CV_fix, ICC = ICC_fix,
+            alpha = alpha_fix, small_sample = TRUE))
+
+## (b) Simulation, cluster-level analysis (cheap, so use many replicates).
+## Run it under both the symmetric and the skewed cluster-effect distribution.
+power_sim_clan_norm <- sapply(deltas_pp, function(d)
+  simulate_power(n_clusters = n_clusters_total, m_mean = m_mean_fix, CV = CV_fix,
+                 p0 = p0_fix, p1 = p0_fix - d/100, icc = ICC_fix,
+                 re_dist = "normal", n_sim = 10000,
+                 alpha = alpha_fix, seed = 20250809))
+
+power_sim_clan <- sapply(deltas_pp, function(d)
+  simulate_power(n_clusters = n_clusters_total, m_mean = m_mean_fix, CV = CV_fix,
+                 p0 = p0_fix, p1 = p0_fix - d/100, icc = ICC_fix,
+                 re_dist = re_dist_fix, n_sim = 10000,
+                 alpha = alpha_fix, seed = 20250809))
+
+## (c) Simulation, GLMM (expensive -> run the effect sizes in parallel).
+## Each call seeds itself internally, so the result is reproducible regardless of scheduling.
+plan(multisession, workers = max(1, min(8, availableCores() - 1)))
+power_sim_glmm <- future_sapply(deltas_pp, function(d)
+  simulate_power_glmmPQL(n_clusters = n_clusters_total, m_mean = m_mean_fix, CV = CV_fix,
+                         p0 = p0_fix, p1 = p0_fix - d/100, icc = ICC_fix,
+                         re_dist = re_dist_fix, n_sim = 1000,
+                         alpha = alpha_fix, seed = 20250809),
+  future.seed = TRUE)
+
+power_sim_glmm_norm <- future_sapply(deltas_pp, function(d)
+  simulate_power_glmmPQL(n_clusters = n_clusters_total, m_mean = m_mean_fix, CV = CV_fix,
+                         p0 = p0_fix, p1 = p0_fix - d/100, icc = ICC_fix,
+                         re_dist = "normal", n_sim = 1000,
+                         alpha = alpha_fix, seed = 20250809),
+  future.seed = TRUE)
+plan(sequential)
+
+method_levels <- c("Closed formula (t-corrected)",
+                   "Simulation: cluster-level, symmetric cluster effects",
+                   "Simulation: cluster-level, skewed cluster effects",
+                   "Simulation: GLMM (SAP primary), skewed cluster effects",
+                   "Simulation: GLMM (SAP primary), symmetric cluster effects")
+
+df_delta <- data.frame(
+  delta_pp = rep(deltas_pp, 5),
+  power = c(power_formula, power_sim_clan_norm, power_sim_clan,
+            power_sim_glmm, power_sim_glmm_norm),
+  method = factor(rep(method_levels, each = length(deltas_pp)), levels = method_levels)
+)
+
+# Minimum detectable effect per method: smallest delta still reaching 80% power
+mde_tbl <- df_delta %>%
+  group_by(method) %>%
+  summarise(mde_pp = if(any(power >= target_power)) min(delta_pp[power >= target_power]) else NA_real_,
+            .groups = "drop")
+knitr::kable(mde_tbl, digits = 1,
+             col.names = c("Method", "Minimum detectable effect (pp) at 80% power"))
+```
+
+::: {.cell-output-display}
+`````{=html}
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Method </th>
+   <th style="text-align:right;"> Minimum detectable effect (pp) at 80% power </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Closed formula (t-corrected) </td>
+   <td style="text-align:right;"> 19 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Simulation: cluster-level, symmetric cluster effects </td>
+   <td style="text-align:right;"> 20 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Simulation: cluster-level, skewed cluster effects </td>
+   <td style="text-align:right;"> 24 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Simulation: GLMM (SAP primary), skewed cluster effects </td>
+   <td style="text-align:right;"> 22 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Simulation: GLMM (SAP primary), symmetric cluster effects </td>
+   <td style="text-align:right;"> 21 </td>
+  </tr>
+</tbody>
+</table>
+
+`````
+:::
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
+ggplot(df_delta, aes(x = delta_pp, y = power, colour = method)) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = target_power, ymax = Inf,
+           fill = "grey85", alpha = 0.5) +
+  geom_hline(yintercept = target_power, linetype = "dashed", colour = "red") +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  scale_x_reverse(breaks = seq(25, 10, by = -1)) +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1), limits = c(0, 1),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_colour_manual(values = setNames(
+    c("grey35", "#7EA6D9", "#1F4E9C", "#8B1A1A", "#E8836F"), method_levels)) +
+  guides(colour = guide_legend(ncol = 2)) +
+  labs(title = "Power vs. effect size at the planned design (13 vs 13 clusters)",
+       subtitle = paste0("ICC ", ICC_fix, " (proportion scale), control rate ",
+                         p0_fix*100, "%, mean cluster size ", m_mean_fix,
+                         ", CV ", CV_fix, ", alpha ", alpha_fix, "\n",
+                         "Marginal effect sizes; shaded band = 80% power or above"),
+       x = "Effect size (percentage point reduction vs. control)",
+       y = "Power",
+       colour = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+```
+
+::: {.cell-output-display}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-27-1.png){width=864}
+:::
+:::
+
+
+## **(2.6) Verification of the simulation**
+
+Checks that the data generating mechanism delivers what it is asked for, and that the test is valid.
+
+
+::: {.cell}
+
+```{.r .cell-code}
+set.seed(20250809)
+
+## Check 1 - type I error. The single most important check: with no true effect
+## (p1 = p0) the rejection rate must be close to the nominal 5%.
+t1_grid <- expand.grid(dist = c("normal","gamma","uniform"),
+                       n_clusters = c(26, 16), stringsAsFactors = FALSE)
+t1_grid$type_I <- mapply(function(d, nc)
+  simulate_power(n_clusters = nc, m_mean = 40, CV = 0.1, p0 = 0.75, p1 = 0.75,
+                 icc = 0.10, re_dist = d, n_sim = 4000, alpha = 0.05, seed = 11),
+  t1_grid$dist, t1_grid$n_clusters)
+
+## Check 2 - realised proportion-scale ICC matches the requested 0.10 under each
+## u_j distribution (this is what sigma_b_for_icc is for)
+icc_check <- sapply(c("normal","gamma","uniform"), function(d){
+  s <- sigma_b_for_icc(0.10, 0.75, d)
+  u <- generate_u(2e5, s, dist = d)
+  p <- plogis(qlogis(0.75) + u); pb <- mean(p)
+  c(sigma_b = s, realised_ICC = var(p)/(pb*(1-pb)))
+})
+
+## Check 3 - realised cluster sizes match the requested mean 40 and CV 0.1
+sz <- replicate(2000, generate_cluster_sizes(26, 40, 0.1))
+
+## Check 4 - u_j moments: mean 0, SD sigma_b, and the intended skew (gamma ~ +1.4)
+u_check <- sapply(c("normal","gamma","uniform"), function(d){
+  s <- sigma_b_for_icc(0.10, 0.75, d)
+  u <- generate_u(2e5, s, dist = d)
+  c(mean = mean(u), sd = sd(u), skew = mean((u-mean(u))^3)/sd(u)^3)
+})
+
+cat("Check 1 - type I error (nominal 0.05):\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+Check 1 - type I error (nominal 0.05):
+```
+
+
+:::
+
+```{.r .cell-code}
+print(t1_grid, row.names = FALSE)
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+    dist n_clusters  type_I
+  normal         26 0.04825
+   gamma         26 0.04775
+ uniform         26 0.04700
+  normal         16 0.04750
+   gamma         16 0.04950
+ uniform         16 0.05100
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nCheck 2 - realised proportion-scale ICC (target 0.10):\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Check 2 - realised proportion-scale ICC (target 0.10):
+```
+
+
+:::
+
+```{.r .cell-code}
+print(round(icc_check, 4))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+             normal  gamma uniform
+sigma_b      0.7710 0.9693  0.7636
+realised_ICC 0.0998 0.1001  0.1000
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nCheck 3 - cluster sizes (target mean 40, CV 0.10):\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Check 3 - cluster sizes (target mean 40, CV 0.10):
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("  mean =", round(mean(sz), 2), " CV =", round(sd(as.vector(sz))/mean(sz), 4),
+    " range =", min(sz), "-", max(sz), "\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+  mean = 40  CV = 0.1006  range = 33 - 47 
+```
+
+
+:::
+
+```{.r .cell-code}
+cat("\nCheck 4 - u_j moments (target mean 0, skew ~+1.4 for gamma, ~0 otherwise):\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+
+Check 4 - u_j moments (target mean 0, skew ~+1.4 for gamma, ~0 otherwise):
+```
+
+
+:::
+
+```{.r .cell-code}
+print(round(u_check, 4))
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+      normal  gamma uniform
+mean -0.0010 0.0010 -0.0004
+sd    0.7726 0.9716  0.7624
+skew -0.0076 1.4229  0.0019
+```
+
+
+:::
+:::
+
+
+**Interpretation and known limitations:**
+
+- Type I error is correctly calibrated at roughly 5% for all cluster-effect distributions and at both 26 and 16 clusters. The cluster-level t-test with the 0.5 continuity correction is valid in this regime, so the power estimates can be trusted.
+
+- Where the "skewed distribution" power penalty comes from: It is worth being precise about this, because it drives the results in chapter 2.5. Holding σ_b fixed and only changing the *shape* of u_j costs almost nothing (power 0.884 normal, 0.880 gamma, 0.889 uniform at σ_b = 0.771). The entire penalty appears only once we insist that each distribution reproduce the *same proportion-scale ICC of 0.10*: the gamma then needs σ_b = 0.969 rather than 0.771, and power falls to 0.747. The reason is that the gamma's long right tail pushes cluster probabilities up against the ceiling of 1 (the control rate is already 0.75), where they add little to Var(p_j); to hit a given proportion-scale ICC it therefore needs much more variance on the log-odds scale - which is precisely the scale the analysis works on. So the conservative gamma scenario is really a statement about how much log-odds heterogeneity is implied by an observed ICC of 0.10, not about skewness per se. If cluster effects are approximately symmetric, the symmetric curves in chapter 2.5 are the relevant ones.
+
+- **The effect size is now specified on the marginal (population-average) scale**, matching what the closed formula in chapter 1 assumes and what "a 25 pp reduction in prescribing" means in the protocol.
+
+- The formula gives 0.954, so under symmetry the closed form and the simulation agree to within about one percentage point. Type I error is unchanged at \~0.05 after calibration, confirming the extra power is real and not an artefact of a broken test.
 
 # **(3) Simulate the full dataset and implement the main analysis strategy**
 
 **The main analysis strategy as per SAP:**
 
--   Due to the relatively low number of clusters in each pair-wise comparison (n=\<30), we use a generalized linear mixed model (GLMM) with restricted pseudo-likelihood estimation and small-sample correction for degrees of freedom (clusters minus cluster-level parameters), as suggested by Thompson and colleagues(ref)
+- Due to the relatively low number of clusters in each pair-wise comparison (n=\<30), we use a generalized linear mixed model (GLMM) with restricted pseudo-likelihood estimation and small-sample correction for degrees of freedom (clusters minus cluster-level parameters), as suggested by Thompson and colleagues(ref)
 
--   We will adjust the model for these *a priori* defined covariates (as fixed effects):
+- We will adjust the model for these *a priori* defined covariates (as fixed effects):
 
-    -   Cluster-level covariates (cluster mean): attendance rate and baseline antibiotic prescription rate (as continuous covariates assuming linearity)
+  - Cluster-level covariates (cluster mean): attendance rate and baseline antibiotic prescription rate (as continuous covariates assuming linearity)
 
-    -   Individual-level covariates: Self-reported sex (as binary covariate: male, female) and age (as continuous covariates assuming non-linear association modelled using restricted cubic splines with 3 knots at 10^th^, 50^th^ and 90^th^ percentiles of the observed age distribution
+  - Individual-level covariates: Self-reported sex (as binary covariate: male, female) and age (as continuous covariates assuming non-linear association modelled using restricted cubic splines with 3 knots at 10^th^, 50^th^ and 90^th^ percentiles of the observed age distribution
 
--   We will report the resulting treatment-effect (beta-1), which is the log-odds difference between intervention and control or – when exponentiated – the adjusted odds ratio, with its 95% confidence interval. This represents a relative cluster-specific effect, conditional on all included covariates. In addition, we will use marginal standardization and report the resulting population-average marginal relative risk and risk difference with their 95% confidence intervals
+- We will report the resulting treatment-effect (beta-1), which is the log-odds difference between intervention and control or – when exponentiated – the adjusted odds ratio, with its 95% confidence interval. This represents a relative cluster-specific effect, conditional on all included covariates. In addition, we will use marginal standardization and report the resulting population-average marginal relative risk and risk difference with their 95% confidence intervals
 
 **Notes on simulating a realistic dataset:**
 
--   Reuse the helper functions from chapter 2.2, incl. conservative gamma distribution for u_j
+- We reuse the helper functions from chapter 2.2, incl. conservative gamma distribution for u_j
 
--   Causal structure:
+- Causal structure:
 
-    -   Cluster latent effect (u_j) influences both, baseline AB prescription rate (through alpha, the correlation strength between baseline and u_j) and attendance rate (through att_corr_target) and directly affects the outcome via the cluster random effect
+  - Cluster latent effect (u_j) influences both, baseline AB prescription rate (through alpha, the correlation strength between baseline and u_j) and attendance rate (through att_corr_target) and directly affects the outcome via the cluster random effect
 
-    -   Baseline AB prescription rate directly affects the outcome (via beta_baseline), representing residual correlation beyond the shared cluster effect alpha
+  - Baseline AB prescription rate directly affects the outcome (via beta_baseline), representing residual correlation beyond the shared cluster effect alpha
 
-    -   Attendance rate directly affects the outcome (via beta_att), representing residual correlation beyond the shared cluster effect att_corr_target
+  - Attendance rate directly affects the outcome (via beta_att), representing residual correlation beyond the shared cluster effect att_corr_target
 
-    -   =\> baseline_rate and attendance both directly push the outcome (via beta_baseline and beta_att) and share correlation with u_j (i.e., indirectly push the outcome)
+  - =\> baseline_rate and attendance both directly push the outcome (via beta_baseline and beta_att) and share correlation with u_j (i.e., indirectly push the outcome)
 
-    -   =\> all of the above in the sense of: "Larger clusters (=higher attendance rate) -\> higher AB prescription rate at endline" and "Clusters with higher AB prescription rate at baseline -\> higher prescription rate at endline"
+  - =\> all of the above in the sense of: "Larger clusters (=higher attendance rate) -\> higher AB prescription rate at endline" and "Clusters with higher AB prescription rate at baseline -\> higher prescription rate at endline"
 
-    -   Treatment (arm 1) directly affects the outcome (through beta_1), but correlation above and noise below masking it
+  - Treatment (arm 1) directly affects the outcome (through beta_1), but correlation above and noise below masking it
 
--   Add some baseline noise (e.g. tau = 0.45) ensuring that even clusters with the same u_j will show some variability in their observed baseline_rate
+- Add some baseline noise (e.g. tau = 0.45) ensuring that even clusters with the same u_j will show some variability in their observed baseline_rate
 
--   alpha (correlation baseline_rate with u_j): e.g. a value of 0.3 means 30% of the variation in the baseline logit is driven by u_j (i.e. drives true cluster tendency or the "cluster-to-cluster variation" at baseline, which also has an impact on the outcome), while the remaining comes from independent measurement noise.
+- alpha (correlation baseline_rate with u_j): e.g. a value of 0.3 means 30% of the variation in the baseline logit is driven by u_j (i.e. drives true cluster tendency or the "cluster-to-cluster variation" at baseline, which also has an impact on the outcome), while the remaining comes from independent measurement noise.
 
--   Produce an individual-level dataset, not cluster-level only - as the real-life dataset will look like and in case we also want to add individual-level correlations
+- Produce an individual-level dataset, not cluster-level only - as the real-life dataset will look like and in case we also want to add individual-level correlations
 
 ## **(3.1) Simulate one dataset and check some diagnostics**
 
@@ -1643,7 +2170,7 @@ CV <- 0.1
 p0 <- 0.75
 p1 <- 0.50
 OR <- p0_p1_to_OR(p0, p1)
-rho <- 0.20 # ICC (on latent logit scale)
+icc <- 0.10 # ICC on the PROPORTION scale (pilot data); sigma_b derived for the chosen re_dist below
 re_dist <- "gamma" # distribution for u_j, keep it conservative
 
 # Individual-level covariates
@@ -1653,7 +2180,7 @@ sex_prob <- 0.48
 
 ## Generate cluster structure
 sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-sigma_b <- icc_to_sigma(rho)
+sigma_b <- sigma_b_for_icc(icc, p0, re_dist)
 u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
 arm_assign <- sample(rep(0:1, length.out = n_clusters))
 
@@ -1693,9 +2220,38 @@ beta_baseline <- 0.5 # how strongly the baseline rate predicts the endline outco
 beta_island <- 0.0 # no correlation
 beta_att_per1000 <- 0.02 # how strongly attendance affects the outcome, independent of u_j (per 1000 pats/y)
 beta_att <- beta_att_per1000 / 1000
-beta0_adj <- beta0 - 1.0 # after including u_j, baseline_rate, attendance, etc., the overall mean outcome probability can drift because of the nonlinear logistic function. Stabilize.
+
+# Calibrate BOTH the intercept and the treatment effect so that the marginal (population-average)
+# prevalences really are p0 in the control arm and p1 in the intervention arm.
+# Adding u_j, baseline_rate and attendance to the linear predictor shifts the mean outcome
+# probability (the logistic link is non-linear), so the intercept has to absorb that shift; and
+# for the same reason the cluster-specific log-OR does not deliver a marginal p0 -> p1 contrast.
+# Previously this was a hard-coded "beta0 - 1.0" with an uncalibrated beta1, which left the
+# realised control prevalence some way off p0 AND the realised effect well short of the intended
+# 25 pp. We now solve for both numerically, weighting clusters by their size.
+lin_nonint <- beta_baseline * qlogis(baseline_rate) +
+              beta_att * attendance_year +
+              beta_island * island +
+              u_j
+beta0_adj <- uniroot(function(b0) sum(sizes * plogis(b0 + lin_nonint)) / sum(sizes) - p0,
+                     interval = c(-20, 20))$root
+beta1 <- uniroot(function(b1) sum(sizes * plogis(beta0_adj + b1 + lin_nonint)) / sum(sizes) - p1,
+                 interval = c(-20, 20))$root
+cat("Calibrated intercept beta0_adj =", round(beta0_adj, 3),
+    "| calibrated beta1 =", round(beta1, 3),
+    "(un-calibrated: beta0 =", round(beta0, 3), ", beta1 =", round(log(OR), 3), ")\n")
+```
+
+::: {.cell-output .cell-output-stdout}
+
+```
+Calibrated intercept beta0_adj = 0.577 | calibrated beta1 = -1.282 (un-calibrated: beta0 = 1.099 , beta1 = -1.099 )
+```
 
 
+:::
+
+```{.r .cell-code}
 ## Simulate individual-level data
 ind_list <- vector("list", length = n_clusters)
 for(j in seq_len(n_clusters)){
@@ -1827,27 +2383,27 @@ print(head(df_sim, 10))
 
 ```
    cluster arm size  y baseline_rate attendance_year attendance_month island
-1        1   0   38 20     0.7218079             484         40.33333      1
-12       2   1   45 13     0.6655458            3314        276.16667      1
-20       3   0   45 24     0.4800860            5358        446.50000      1
-21       4   1   45 34     0.9107505           17338       1444.83333      1
-22       5   0   42 29     0.7854459            8159        679.91667      0
-23       6   0   41 41     0.8635783            2278        189.83333      0
-24       7   1   46 14     0.6704538           11584        965.33333      1
-25       8   0   40 28     0.6571218           17009       1417.41667      1
-26       9   0   43 19     0.7625871            1313        109.41667      1
-2       10   1   40 26     0.8911799            6660        555.00000      0
+1        1   0   38 26     0.7197907             484         40.33333      1
+12       2   1   45 18     0.6646869            3314        276.16667      1
+20       3   0   46 29     0.4797296            5358        446.50000      1
+21       4   1   45 36     0.9130966           17338       1444.83333      1
+22       5   0   42 33     0.7864947            8159        679.91667      0
+23       6   0   41 41     0.8658346            2278        189.83333      0
+24       7   1   47 17     0.6684160           11584        965.33333      1
+25       8   0   40 29     0.6559559           17009       1417.41667      1
+26       9   0   44 20     0.7588858            1313        109.41667      1
+2       10   1   40 27     0.8910091            6660        555.00000      0
            u_j
-1  -0.48591058
-12 -0.18692341
-20 -0.06920874
-21  1.41603543
-22  0.30221964
-23  0.93496870
-24 -0.44639639
-25 -0.25064723
-26 -0.98577972
-2  -0.08530853
+1  -0.51932254
+12 -0.19977655
+20 -0.07396764
+21  1.51340421
+22  0.32300072
+23  0.99925859
+24 -0.47709129
+25 -0.26788212
+26 -1.05356345
+2  -0.09117448
 ```
 
 
@@ -1912,69 +2468,69 @@ print(head(df_ind, 50))
 36       1   0 31.490423   1             484         40.33333      1
 37       1   0 39.726115   1             484         40.33333      1
 38       1   0 41.955090   0             484         40.33333      1
-39       2   1  9.124056   1            3314        276.16667      1
+39       2   1  9.124056   0            3314        276.16667      1
 40       2   1 42.462407   1            3314        276.16667      1
 41       2   1 48.208422   0            3314        276.16667      1
-42       2   1 49.436545   1            3314        276.16667      1
+42       2   1 49.436545   0            3314        276.16667      1
 43       2   1 14.160414   0            3314        276.16667      1
 44       2   1 15.872495   0            3314        276.16667      1
-45       2   1 50.214321   0            3314        276.16667      1
+45       2   1 50.214321   1            3314        276.16667      1
 46       2   1 41.816423   0            3314        276.16667      1
 47       2   1 38.097800   1            3314        276.16667      1
-48       2   1 26.032686   0            3314        276.16667      1
-49       2   1  5.919001   1            3314        276.16667      1
-50       2   1 26.229268   1            3314        276.16667      1
+48       2   1 26.032686   1            3314        276.16667      1
+49       2   1  5.919001   0            3314        276.16667      1
+50       2   1 26.229268   0            3314        276.16667      1
    baseline_rate        u_j         p y
-1      0.7218079 -0.4859106 0.5247561 1
-2      0.7218079 -0.4859106 0.5247561 0
-3      0.7218079 -0.4859106 0.5247561 0
-4      0.7218079 -0.4859106 0.5247561 1
-5      0.7218079 -0.4859106 0.5247561 0
-6      0.7218079 -0.4859106 0.5247561 0
-7      0.7218079 -0.4859106 0.5247561 1
-8      0.7218079 -0.4859106 0.5247561 0
-9      0.7218079 -0.4859106 0.5247561 0
-10     0.7218079 -0.4859106 0.5247561 1
-11     0.7218079 -0.4859106 0.5247561 1
-12     0.7218079 -0.4859106 0.5247561 1
-13     0.7218079 -0.4859106 0.5247561 1
-14     0.7218079 -0.4859106 0.5247561 0
-15     0.7218079 -0.4859106 0.5247561 1
-16     0.7218079 -0.4859106 0.5247561 1
-17     0.7218079 -0.4859106 0.5247561 1
-18     0.7218079 -0.4859106 0.5247561 0
-19     0.7218079 -0.4859106 0.5247561 0
-20     0.7218079 -0.4859106 0.5247561 1
-21     0.7218079 -0.4859106 0.5247561 0
-22     0.7218079 -0.4859106 0.5247561 0
-23     0.7218079 -0.4859106 0.5247561 1
-24     0.7218079 -0.4859106 0.5247561 0
-25     0.7218079 -0.4859106 0.5247561 0
-26     0.7218079 -0.4859106 0.5247561 1
-27     0.7218079 -0.4859106 0.5247561 1
-28     0.7218079 -0.4859106 0.5247561 1
-29     0.7218079 -0.4859106 0.5247561 1
-30     0.7218079 -0.4859106 0.5247561 0
-31     0.7218079 -0.4859106 0.5247561 1
-32     0.7218079 -0.4859106 0.5247561 1
-33     0.7218079 -0.4859106 0.5247561 1
-34     0.7218079 -0.4859106 0.5247561 0
-35     0.7218079 -0.4859106 0.5247561 0
-36     0.7218079 -0.4859106 0.5247561 0
-37     0.7218079 -0.4859106 0.5247561 1
-38     0.7218079 -0.4859106 0.5247561 0
-39     0.6655458 -0.1869234 0.3150554 0
-40     0.6655458 -0.1869234 0.3150554 0
-41     0.6655458 -0.1869234 0.3150554 0
-42     0.6655458 -0.1869234 0.3150554 0
-43     0.6655458 -0.1869234 0.3150554 1
-44     0.6655458 -0.1869234 0.3150554 0
-45     0.6655458 -0.1869234 0.3150554 1
-46     0.6655458 -0.1869234 0.3150554 0
-47     0.6655458 -0.1869234 0.3150554 1
-48     0.6655458 -0.1869234 0.3150554 0
-49     0.6655458 -0.1869234 0.3150554 1
-50     0.6655458 -0.1869234 0.3150554 0
+1      0.7197907 -0.5193225 0.6315719 1
+2      0.7197907 -0.5193225 0.6315719 0
+3      0.7197907 -0.5193225 0.6315719 0
+4      0.7197907 -0.5193225 0.6315719 1
+5      0.7197907 -0.5193225 0.6315719 0
+6      0.7197907 -0.5193225 0.6315719 0
+7      0.7197907 -0.5193225 0.6315719 1
+8      0.7197907 -0.5193225 0.6315719 1
+9      0.7197907 -0.5193225 0.6315719 0
+10     0.7197907 -0.5193225 0.6315719 1
+11     0.7197907 -0.5193225 0.6315719 1
+12     0.7197907 -0.5193225 0.6315719 1
+13     0.7197907 -0.5193225 0.6315719 1
+14     0.7197907 -0.5193225 0.6315719 0
+15     0.7197907 -0.5193225 0.6315719 1
+16     0.7197907 -0.5193225 0.6315719 1
+17     0.7197907 -0.5193225 0.6315719 1
+18     0.7197907 -0.5193225 0.6315719 1
+19     0.7197907 -0.5193225 0.6315719 0
+20     0.7197907 -0.5193225 0.6315719 1
+21     0.7197907 -0.5193225 0.6315719 0
+22     0.7197907 -0.5193225 0.6315719 1
+23     0.7197907 -0.5193225 0.6315719 1
+24     0.7197907 -0.5193225 0.6315719 0
+25     0.7197907 -0.5193225 0.6315719 0
+26     0.7197907 -0.5193225 0.6315719 1
+27     0.7197907 -0.5193225 0.6315719 1
+28     0.7197907 -0.5193225 0.6315719 1
+29     0.7197907 -0.5193225 0.6315719 1
+30     0.7197907 -0.5193225 0.6315719 0
+31     0.7197907 -0.5193225 0.6315719 1
+32     0.7197907 -0.5193225 0.6315719 1
+33     0.7197907 -0.5193225 0.6315719 1
+34     0.7197907 -0.5193225 0.6315719 1
+35     0.7197907 -0.5193225 0.6315719 0
+36     0.7197907 -0.5193225 0.6315719 1
+37     0.7197907 -0.5193225 0.6315719 1
+38     0.7197907 -0.5193225 0.6315719 1
+39     0.6646869 -0.1997766 0.3782834 0
+40     0.6646869 -0.1997766 0.3782834 1
+41     0.6646869 -0.1997766 0.3782834 0
+42     0.6646869 -0.1997766 0.3782834 1
+43     0.6646869 -0.1997766 0.3782834 0
+44     0.6646869 -0.1997766 0.3782834 1
+45     0.6646869 -0.1997766 0.3782834 1
+46     0.6646869 -0.1997766 0.3782834 1
+47     0.6646869 -0.1997766 0.3782834 0
+48     0.6646869 -0.1997766 0.3782834 0
+49     0.6646869 -0.1997766 0.3782834 0
+50     0.6646869 -0.1997766 0.3782834 0
 ```
 
 
@@ -1988,7 +2544,7 @@ cat("\nOverall N =", sum(df_sim$size), "individuals across", n_clusters, "cluste
 
 ```
 
-Overall N = 1071 individuals across 26 clusters
+Overall N = 1075 individuals across 26 clusters
 ```
 
 
@@ -2006,8 +2562,8 @@ for(i in seq_len(nrow(arm_rates))){
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Arm 0 observed prescription rate: 0.622 
-Arm 1 observed prescription rate: 0.474 
+Arm 0 observed prescription rate: 0.71 
+Arm 1 observed prescription rate: 0.551 
 ```
 
 
@@ -2021,10 +2577,18 @@ invisible(list(individual = df_ind, cluster = df_sim)) # prevents automatic prin
 
 ## **(3.2) The analysis approach, step-by-step**
 
+Note on the small-sample degrees of freedom: as per SAP, the correction is "clusters minus **cluster-level** parameters" (Thompson & Leyrat). Individual-level covariates (sex, the age splines) are estimated from individual-level information and do not consume cluster-level degrees of freedom, so they must not be subtracted. Subtracting df = 26 - 5 = 21 (DOUBLE-CHECK SAP!!!)
+
 
 ::: {.cell}
 
 ```{.r .cell-code}
+# Which fixed effects are CLUSTER-level? Only these consume cluster-level degrees of freedom.
+cluster_level_terms <- c("(Intercept)", "arm1", "baseline_rate", "attendance_year", "island1")
+n_cluster_params <- function(model){
+  sum(names(fixef(model)) %in% cluster_level_terms)
+}
+
 ## Precompute spline basis for age and convert to numeric
 age_spline <- as.data.frame(ns(df_ind$age, knots = quantile(df_ind$age, probs=c(0.1,0.5,0.9))))
 colnames(age_spline) <- paste0("age_spline", seq_len(ncol(age_spline)))
@@ -2063,40 +2627,40 @@ Linear mixed-effects model fit by maximum likelihood
 Random effects:
  Formula: ~1 | cluster
         (Intercept)  Residual
-StdDev:   0.5420936 0.9789434
+StdDev:   0.5262273 0.9738258
 
 Variance function:
  Structure: fixed weights
  Formula: ~invwt 
 Fixed effects:  y ~ arm + baseline_rate + attendance_year + island + sex + age_spline1 +      age_spline2 + age_spline3 + age_spline4 
                     Value Std.Error   DF   t-value p-value
-(Intercept)     -3.571481 1.2187709 1040 -2.930396  0.0035
-arm1            -1.015317 0.2652498   21 -3.827776  0.0010
-baseline_rate    5.998138 1.3510521   21  4.439605  0.0002
-attendance_year  0.000041 0.0000309   21  1.334604  0.1963
-island1         -0.023031 0.2777473   21 -0.082919  0.9347
-sex1             0.103924 0.1310441 1040  0.793048  0.4279
-age_spline1     -0.506236 0.6176898 1040 -0.819563  0.4127
-age_spline2     -0.109424 0.5745078 1040 -0.190465  0.8490
-age_spline3     -0.534784 1.4827593 1040 -0.360668  0.7184
-age_spline4      0.342034 0.9434878 1040  0.362521  0.7170
+(Intercept)     -3.179055 1.2212880 1044 -2.603034  0.0094
+arm1            -1.060943 0.2627790   21 -4.037397  0.0006
+baseline_rate    5.038537 1.3338730   21  3.777374  0.0011
+attendance_year  0.000055 0.0000307   21  1.784252  0.0888
+island1         -0.167003 0.2734074   21 -0.610822  0.5479
+sex1            -0.077662 0.1322644 1044 -0.587170  0.5572
+age_spline1      0.215190 0.6315250 1044  0.340747  0.7334
+age_spline2      0.603690 0.5957829 1044  1.013271  0.3112
+age_spline3      0.631805 1.5325636 1044  0.412254  0.6802
+age_spline4     -0.169143 0.9223310 1044 -0.183386  0.8545
  Correlation: 
                 (Intr) arm1   bsln_r attnd_ islnd1 sex1   ag_sp1 ag_sp2 ag_sp3
-arm1             0.117                                                        
-baseline_rate   -0.809 -0.249                                                 
-attendance_year -0.046 -0.159 -0.066                                          
-island1         -0.253 -0.075  0.234 -0.328                                   
-sex1            -0.030 -0.010 -0.004  0.002 -0.005                            
-age_spline1     -0.508  0.024 -0.003 -0.032  0.008 -0.028                     
-age_spline2     -0.456  0.018  0.014 -0.023 -0.022  0.001  0.633              
-age_spline3     -0.523  0.024  0.008 -0.028  0.004 -0.015  0.875  0.699       
-age_spline4     -0.047  0.012 -0.005 -0.018  0.040  0.022  0.251 -0.299  0.333
+arm1             0.124                                                        
+baseline_rate   -0.794 -0.260                                                 
+attendance_year -0.058 -0.170 -0.052                                          
+island1         -0.258 -0.073  0.238 -0.319                                   
+sex1            -0.050 -0.003 -0.012  0.001 -0.006                            
+age_spline1     -0.527  0.019 -0.005 -0.031  0.011  0.016                     
+age_spline2     -0.480  0.015  0.012 -0.015 -0.014  0.034  0.649              
+age_spline3     -0.542  0.022  0.003 -0.024  0.014  0.007  0.878  0.720       
+age_spline4     -0.037  0.014 -0.014 -0.020  0.044 -0.031  0.245 -0.289  0.318
 
 Standardized Within-Group Residuals:
        Min         Q1        Med         Q3        Max 
--3.8575737 -0.9128196  0.3404748  0.8587993  1.7024345 
+-2.9589159 -0.9528478  0.4786207  0.7885511  1.4063926 
 
-Number of Observations: 1071
+Number of Observations: 1075
 Number of Groups: 26 
 ```
 
@@ -2117,7 +2681,7 @@ model_unadj <- glmmPQL(
 coef_name_unadj <- grep("^arm", names(fixef(model_unadj)), value=TRUE)
 coef_arm_unadj <- fixef(model_unadj)[coef_name_unadj]
 se_arm_unadj <- summary(model_unadj)$tTable[coef_name_unadj,"Std.Error"]
-df_unadj <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
+df_unadj <- length(unique(df_ind$cluster)) - n_cluster_params(model_unadj)
 t_stat_unadj <- coef_arm_unadj / se_arm_unadj
 p_val_unadj <- 2 * pt(-abs(t_stat_unadj), df=df_unadj) # small sample correction
 OR_unadj <- exp(coef_arm_unadj)
@@ -2135,7 +2699,7 @@ model_strata <- glmmPQL(
 coef_name_strata <- grep("^arm", names(fixef(model_strata)), value=TRUE)
 coef_arm_strata <- fixef(model_strata)[coef_name_strata]
 se_arm_strata <- summary(model_strata)$tTable[coef_name_strata,"Std.Error"]
-df_strata <- length(unique(df_ind$cluster)) - length(fixef(model_strata))
+df_strata <- length(unique(df_ind$cluster)) - n_cluster_params(model_strata)
 t_stat_strata <- coef_arm_strata / se_arm_strata
 p_val_strata <- 2 * pt(-abs(t_stat_strata), df=df_strata) # small sample correction
 OR_strata <- exp(coef_arm_strata)
@@ -2145,7 +2709,7 @@ CI_strata <- exp(coef_arm_strata + c(-1,1)*qt(0.975, df=df_strata)*se_arm_strata
 coef_name_full <- grep("^arm", names(fixef(model_pql)), value=TRUE)
 coef_arm_full <- fixef(model_pql)[coef_name_full]
 se_arm_full <- summary(model_pql)$tTable[coef_name_full,"Std.Error"]
-df_full <- length(unique(df_ind$cluster)) - length(fixef(model_pql))
+df_full <- length(unique(df_ind$cluster)) - n_cluster_params(model_pql)
 t_stat_full <- coef_arm_full / se_arm_full
 p_val_full <- 2 * pt(-abs(t_stat_full), df=df_full) # small sample correction
 OR_full <- exp(coef_arm_full)
@@ -2206,19 +2770,19 @@ results_table %>%
 <tbody>
   <tr>
    <td style="text-align:left;"> Unadjusted </td>
-   <td style="text-align:left;"> 0.490 </td>
-   <td style="text-align:left;"> 0.239 </td>
-   <td style="text-align:left;"> 1.005 </td>
-   <td style="text-align:left;"> 0.052 </td>
+   <td style="text-align:left;"> 0.460 </td>
+   <td style="text-align:left;"> 0.236 </td>
+   <td style="text-align:left;"> 0.897 </td>
+   <td style="text-align:left;"> 0.025 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
    <td style="text-align:left;"> Adjusted for strat only </td>
-   <td style="text-align:left;"> 0.362 </td>
-   <td style="text-align:left;"> 0.208 </td>
-   <td style="text-align:left;"> 0.631 </td>
+   <td style="text-align:left;"> 0.344 </td>
+   <td style="text-align:left;"> 0.199 </td>
+   <td style="text-align:left;"> 0.593 </td>
    <td style="text-align:left;"> 0.001 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
@@ -2226,13 +2790,13 @@ results_table %>%
   </tr>
   <tr>
    <td style="text-align:left;"> Fully adjusted; age spline </td>
-   <td style="text-align:left;"> 0.362 </td>
-   <td style="text-align:left;"> 0.206 </td>
-   <td style="text-align:left;"> 0.636 </td>
+   <td style="text-align:left;"> 0.346 </td>
+   <td style="text-align:left;"> 0.200 </td>
+   <td style="text-align:left;"> 0.598 </td>
    <td style="text-align:left;"> 0.001 </td>
-   <td style="text-align:left;"> 0.670 </td>
-   <td style="text-align:left;"> 0.533 </td>
-   <td style="text-align:left;"> 0.806 </td>
+   <td style="text-align:left;"> 0.704 </td>
+   <td style="text-align:left;"> 0.583 </td>
+   <td style="text-align:left;"> 0.826 </td>
   </tr>
 </tbody>
 </table>
@@ -2262,15 +2826,16 @@ simulate_crt <- function(
   CV = 0.1,
   p0 = 0.75,
   p1 = 0.50,
-  rho = 0.2,
+  icc = 0.10,
   re_dist = "gamma",
   alpha = 0.3, # weak-moderate correlation between u_j and baseline AB prescription rate
   tau = 0.45, # SD of baseline noise
   mean_att_year = 7786,
   sd_att_year = 3967,
   att_corr_target = 0.2, # weak-moderate correlation between u_j and attendance rate
-  beta_baseline = 0.2, # weak-moderate pos correlation: baseline AB rate -> outcome, independent of u_j
+  beta_baseline = 0.5, # pos correlation: baseline AB rate -> outcome, independent of u_j (matches chapter 3.1)
   beta_att_per1000 = 0.02, # weak-moderate pos correlation: attendance rate -> outcome, independent of u_j
+  beta_island = 0.0, # no correlation (was previously read from the global environment)
   age_mean = 35,
   age_sd = 12,
   sex_prob = 0.48
@@ -2281,11 +2846,10 @@ simulate_crt <- function(
   beta0 <- p_to_beta0(p0)
   beta1 <- log(OR)
   beta_att <- beta_att_per1000 / 1000
-  beta0_adj <- beta0 - 1.0
-  
+
   # (2) Generate clusters
   sizes <- generate_cluster_sizes(n_clusters, m_mean, CV)
-  sigma_b <- icc_to_sigma(rho)
+  sigma_b <- sigma_b_for_icc(icc, p0, re_dist)
   u_j <- generate_u(n_clusters, sigma_b, dist = re_dist)
   arm_assign <- sample(rep(0:1, length.out = n_clusters))
   
@@ -2305,6 +2869,17 @@ simulate_crt <- function(
   
   # (5) Island
   island <- rbinom(n_clusters, 1, 0.5)
+
+  # (5b) Calibrate beta0 AND beta1 so the marginal prevalences really are p0 and p1
+  # (see chapter 3.1 - replaces the previous hard-coded "beta0 - 1.0" and uncalibrated beta1)
+  lin_nonint <- beta_baseline * qlogis(baseline_rate) +
+                beta_att * attendance_year +
+                beta_island * island +
+                u_j
+  beta0_adj <- uniroot(function(b0) sum(sizes * plogis(b0 + lin_nonint)) / sum(sizes) - p0,
+                       interval = c(-20, 20))$root
+  beta1 <- uniroot(function(b) sum(sizes * plogis(beta0_adj + b + lin_nonint)) / sum(sizes) - p1,
+                   interval = c(-20, 20))$root
   
   # (6) Individual-level simulation
   ind_list <- vector("list", length = n_clusters)
@@ -2375,18 +2950,22 @@ n_sims <- 1000
 set.seed(20250809)
 
 # Storage
+# NOTE: these must be named arguments (col = NA). Writing "results$col <- NA" inside
+# data.frame() is an assignment, not an argument: it silently mutates whatever object
+# called `results` already exists in the environment (e.g. the leftover grid from 2.3.3)
+# and produces junk column names, or errors outright in a fresh session.
 results <- data.frame(
   sim = 1:n_sims,
   unadj_signif = NA,
   adj_signif = NA,
   beta_unadj = NA,
   beta_adj = NA,
-  results$OR_unadj <- NA,
-  results$OR_unadj_lower <- NA,
-  results$OR_unadj_upper <- NA,
-  results$OR_adj <- NA,
-  results$OR_adj_lower <- NA,
-  results$OR_adj_upper <- NA
+  OR_unadj = NA,
+  OR_unadj_lower = NA,
+  OR_unadj_upper = NA,
+  OR_adj = NA,
+  OR_adj_lower = NA,
+  OR_adj_upper = NA
 )
 
 for(i in seq_len(n_sims)){
@@ -2417,7 +2996,7 @@ for(i in seq_len(n_sims)){
   beta1_unadj <- fixef(model_unadj)["arm1"]
   se1_unadj   <- summary(model_unadj)$tTable["arm1","Std.Error"]
   t1 <- beta1_unadj / se1_unadj
-  df1 <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
+  df1 <- length(unique(df_ind$cluster)) - n_cluster_params(model_unadj)
   pval_unadj <- 2 * pt(-abs(t1), df=df1)
   
   # (5) Fully adjusted model
@@ -2436,17 +3015,17 @@ for(i in seq_len(n_sims)){
   beta1_adj <- fixef(model_adj)["arm1"]
   se1_adj   <- summary(model_adj)$tTable["arm1","Std.Error"]
   t_adj <- beta1_adj / se1_adj
-  df_adj <- length(unique(df_ind$cluster)) - length(fixef(model_adj))
+  df_adj <- length(unique(df_ind$cluster)) - n_cluster_params(model_adj)
   pval_adj <- 2 * pt(-abs(t_adj), df=df_adj)
   
   # (6) Save results including OR and CI
-  df1 <- length(unique(df_ind$cluster)) - length(fixef(model_unadj))
+  df1 <- length(unique(df_ind$cluster)) - n_cluster_params(model_unadj)
   tval <- qt(0.975, df=df1)
   results$OR_unadj[i] <- exp(beta1_unadj)
   results$OR_unadj_lower[i] <- exp(beta1_unadj - tval * se1_unadj)
   results$OR_unadj_upper[i] <- exp(beta1_unadj + tval * se1_unadj)
   
-  df_adj <- length(unique(df_ind$cluster)) - length(fixef(model_adj))
+  df_adj <- length(unique(df_ind$cluster)) - n_cluster_params(model_adj)
   tval_adj <- qt(0.975, df=df_adj)
   results$OR_adj[i] <- exp(beta1_adj)
   results$OR_adj_lower[i] <- exp(beta1_adj - tval_adj * se1_adj)
@@ -2466,7 +3045,7 @@ cat("Estimated power (unadjusted)  =", round(power_unadj,4), "\n")
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Estimated power (unadjusted)  = 0.812 
+Estimated power (unadjusted)  = 0.823 
 ```
 
 
@@ -2479,7 +3058,7 @@ cat("Estimated power (fully adjusted) =", round(power_adj,4), "\n")
 ::: {.cell-output .cell-output-stdout}
 
 ```
-Estimated power (fully adjusted) = 0.898 
+Estimated power (fully adjusted) = 0.947 
 ```
 
 
@@ -2494,20 +3073,20 @@ summary(results[,c("OR_unadj","OR_unadj_lower","OR_unadj_upper",
 ::: {.cell-output .cell-output-stdout}
 
 ```
-    OR_unadj      OR_unadj_lower    OR_unadj_upper       OR_adj      
- Min.   :0.1046   Min.   :0.04464   Min.   :0.1899   Min.   :0.1031  
- 1st Qu.:0.2654   1st Qu.:0.12211   1st Qu.:0.5589   1st Qu.:0.2650  
- Median :0.3331   Median :0.15774   Median :0.7104   Median :0.3382  
- Mean   :0.3640   Mean   :0.17311   Mean   :0.7789   Mean   :0.3540  
- 3rd Qu.:0.4280   3rd Qu.:0.20877   3rd Qu.:0.9225   3rd Qu.:0.4173  
- Max.   :2.4694   Max.   :1.27878   Max.   :4.7687   Max.   :1.5219  
-  OR_adj_lower     OR_adj_upper   
- Min.   :0.0448   Min.   :0.1883  
- 1st Qu.:0.1373   1st Qu.:0.5042  
- Median :0.1738   Median :0.6477  
- Mean   :0.1869   Mean   :0.6808  
- 3rd Qu.:0.2220   3rd Qu.:0.8124  
- Max.   :0.8044   Max.   :2.8793  
+    OR_unadj       OR_unadj_lower    OR_unadj_upper       OR_adj       
+ Min.   :0.06918   Min.   :0.02452   Min.   :0.1422   Min.   :0.07533  
+ 1st Qu.:0.21506   1st Qu.:0.09218   1st Qu.:0.4830   1st Qu.:0.22399  
+ Median :0.28929   Median :0.12591   Median :0.6497   Median :0.28824  
+ Mean   :0.31072   Mean   :0.13692   Mean   :0.7205   Mean   :0.30143  
+ 3rd Qu.:0.37836   3rd Qu.:0.16935   3rd Qu.:0.8910   3rd Qu.:0.35677  
+ Max.   :1.14696   Max.   :0.51124   Max.   :2.9511   Max.   :0.81139  
+  OR_adj_lower      OR_adj_upper   
+ Min.   :0.03515   Min.   :0.1614  
+ 1st Qu.:0.11707   1st Qu.:0.4192  
+ Median :0.15079   Median :0.5412  
+ Mean   :0.15983   Mean   :0.5771  
+ 3rd Qu.:0.19404   3rd Qu.:0.6862  
+ Max.   :0.46341   Max.   :2.0726  
 ```
 
 
@@ -2536,7 +3115,7 @@ Dn: maximum tolerated size imbalance before intervening
 
 p_Dn: probability of forcing assignment to the smallest group once that imbalance is exceeded
 
--   if any arm is ahead by ≥1 cluster, the next cluster is forced to the smallest arm. The “numbers-balance” rule (Sec. 2.3); they introduce p_Dn to reduce predictability vs. setting it to 1, but allow either.
+- if any arm is ahead by ≥1 cluster, the next cluster is forced to the smallest arm. The “numbers-balance” rule (Sec. 2.3); they introduce p_Dn to reduce predictability vs. setting it to 1, but allow either.
 
 The first 2 sequences (here 6 clusters) are allocated as a permuted block - two per arm - before using minimization. This ensures early variance estimates exist for the KLD and mirrors the recommended start.
 
@@ -2548,16 +3127,16 @@ Structure of allocation dataset:
 
 1.  cluster_id: 1-39
 2.  antibiotic_rate
-    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?
+    - Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?
 
-    -   Proportion, ranging from 0.44-0.87
+    - Proportion, ranging from 0.44-0.87
 3.  attendance_rate
-    -   All patients presenting at the participating cluster, per month, mean over past year
+    - All patients presenting at the participating cluster, per month, mean over past year
 
-    -   Absolute count, ranging from 200-2000
+    - Absolute count, ranging from 200-2000
 4.  island
-    -   Pemba vs Unguja
-    -   30:70
+    - Pemba vs Unguja
+    - 30:70
 5.  arm: allocation 1-3
 
 
@@ -2860,7 +3439,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-31-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png){width=672}
 :::
 :::
 
@@ -2869,38 +3448,38 @@ barplot(t(island_prop),
 
 If we use batch-randomization (all clusters randomized at once and no new clusters entering later), the probably simple covariate-constrained randomization to be used: <https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/>
 
--   Exact 1:1:1 overall allocation:
+- Exact 1:1:1 overall allocation:
 
-    -   13 Control / 13 Intervention 1 / 13 Intervention 2
+  - 13 Control / 13 Intervention 1 / 13 Intervention 2
 
--   Soft stratification for "island":
+- Soft stratification for "island":
 
-    -   Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms
+  - Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms
 
-    -   But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)
+  - But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)
 
--   Global numeric balance re antibiotic_rate and attendance_rate:
+- Global numeric balance re antibiotic_rate and attendance_rate:
 
-    -   Optimise re mean difference between arms
-    -   Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)
-    -   Equal weight for the two continuous covariates because they're standardized and equally important
+  - Optimise re mean difference between arms
+  - Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)
+  - Equal weight for the two continuous covariates because they're standardized and equally important
 
--   Random selection among best allocations to preserve randomness, while enforcing optimal balance
+- Random selection among best allocations to preserve randomness, while enforcing optimal balance
 
 Structure of allocation dataset:
 
 1.  cluster_id: 1-39
 2.  antibiotic_rate
-    -   Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.
+    - Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.
 
-    -   Proportion, ranging from 0.44-0.87
+    - Proportion, ranging from 0.44-0.87
 3.  attendance_rate
-    -   All patients presenting at the participating cluster, per month, mean over past year
+    - All patients presenting at the participating cluster, per month, mean over past year
 
-    -   Absolute count, ranging from 200-2000
+    - Absolute count, ranging from 200-2000
 4.  island
-    -   Pemba vs Unguja
-    -   30:70
+    - Pemba vs Unguja
+    - 30:70
 5.  arm: allocation 1-3
 
 
@@ -3255,7 +3834,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-33-1.png){width=672}
 :::
 :::
 
