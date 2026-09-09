@@ -135,8 +135,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#stratified-randomization-algorithm" id="toc-stratified-randomization-algorithm" class="nav-link" data-scroll-target="#stratified-randomization-algorithm"><strong>(4) Stratified randomization algorithm</strong></a>
   <ul>
-  <li><a href="#minimization" id="toc-minimization" class="nav-link" data-scroll-target="#minimization"><strong>(4.1) Minimization</strong></a></li>
-  <li><a href="#covariate-constrained-randomization" id="toc-covariate-constrained-randomization" class="nav-link" data-scroll-target="#covariate-constrained-randomization"><strong>(4.2) Covariate-constrained randomization</strong></a></li>
+  <li><a href="#covariate-constrained-randomization" id="toc-covariate-constrained-randomization" class="nav-link" data-scroll-target="#covariate-constrained-randomization"><strong>(4.1) Covariate-constrained randomization</strong></a></li>
   </ul></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="MOCA-DAWA.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
@@ -171,7 +170,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="dawa-cluster-randomized-trial-crt" class="level1">
 <h1><strong>DAWA cluster randomized trial (CRT)</strong></h1>
 <blockquote class="blockquote">
-<p><strong>Update - sample size revised based on under-5 pilot data.</strong> Pilot data from the trial setting (ZanEMR, 31 facilities) give, for the under-5 population on which the sample size is based, a baseline antibiotic prescription proportion of <strong>0.78</strong> (95% CI 0.747-0.814) and an ICC of <strong>0.048</strong> (95% CI 0.023-0.077), substantially lower than the 0.20 previously assumed from mainland Tanzania. All calculations below use <strong>ICC = 0.08</strong> (rounding up the upper confidence bound) as the primary, conservative assumption, with sensitivity analyses across 0.02-0.10. The facility log-odds in the pilot are symmetric (skew +0.14, Shapiro-Wilk p = 0.32), so symmetric cluster effects are the primary planning assumption and the skewed (gamma) scenario is retained as a stress test.</p>
+<p><strong>Update: sample size revised based on under-5 pilot data.</strong> Pilot data from the trial setting (ZanEMR data) give, for the under-5 population on which the sample size is based, a baseline antibiotic prescription proportion of <strong>0.78</strong> (95% CI 0.747-0.814) and an ICC of <strong>0.048</strong> (95% CI 0.023-0.077), substantially lower than the ICC 0.20 as previously assumed from mainland Tanzania data. All calculations below use <strong>ICC = 0.08</strong> as the primary, conservative assumption, with sensitivity analyses across 0.02-0.10. The facility log-odds in the pilot data are symmetric, so symmetric cluster effects are the primary planning assumption and the skewed (gamma) scenario is retained as a sensitivity analysis.</p>
 </blockquote>
 <p>Interventions on the level of health care workers at health facilities (dispensaries) in Zanzibar to reduce antibiotic prescriptions. Multi-arm with 2 interventions:</p>
 <ul>
@@ -502,9 +501,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><p>The DEFF drops from 8.88 (ICC 0.20) to 4.15, and the requirement for the driving contrast (Control vs Int 1, 20 pp) is <strong>10 clusters per arm</strong> with the small-sample correction (9 without it), i.e.&nbsp;30 clusters in total.</p></li>
 <li><p>The small-sample correction costs one to two extra clusters per arm at these cluster numbers (C vs I1: 9 -&gt; 10; C vs I2: 6 -&gt; 7), consistent with the usual rule of thumb of adding a cluster per arm below ~15 clusters per arm. All figures in chapter 1 below are small-sample corrected.</p></li>
-<li><p>We nevertheless <strong>retain the planned 13 clusters per arm (39 in total)</strong>, for three reasons: (i) 39 clusters is within the feasibility/budget ceiling and was already planned; (ii) at 8-9 clusters per arm the small-sample behaviour of the analysis model (GLMM with df = clusters - cluster-level parameters) becomes unreliable, and the formula-based DEFF approach is known to under-estimate the required size in that range; (iii) the reserve buys robustness against the ICC being at the upper end of, or above, the pilot range, and (iv) detecting a lower delta instead is more realistic and still clinically meaningful.</p></li>
-<li><p>At 13 clusters per arm, ICC 0.08 and a 78% baseline, formula-based power is 91% for the 20 pp contrast and 98% for the 25 pp contrast, and the minimum detectable effect at 80% power is <strong>16.8 pp</strong>.</p></li>
-<li><p>The simulations are somewhat less optimistic than the formula: under symmetric cluster effects the GLMM (SAP primary, unadjusted) gives 86% power at 20 pp and a minimum detectable effect of 19 pp.&nbsp;Powering on 20 pp therefore keeps adequate margin under both the formula and the simulation; 18 pp would not.</p></li>
+<li><p>We nevertheless <strong>retain the planned 13 clusters per arm (39 in total)</strong>, for several reasons: (i) 39 clusters is within the feasibility/budget ceiling and was already planned; (ii) at 8-9 clusters per arm the small-sample behaviour of the analysis model (GLMM with df = clusters - cluster-level parameters) becomes unreliable, and the formula-based DEFF approach is known to under-estimate the required size in that range; (iii) the reserve buys robustness against the ICC being at the upper end of, or above, the pilot range, and (iv) detecting a lower delta instead is more realistic and still clinically meaningful.</p></li>
+<li><p>At 13 clusters per arm, ICC 0.08 and a 78% baseline, formula-based power is 91% for the 20 pp contrast and 98% for the 25 pp contrast, and the minimum detectable effect at 80% power is <strong>17 pp</strong>.</p></li>
+<li><p>The simulations are somewhat less optimistic than the formula: under symmetric cluster effects the GLMM (SAP primary, unadjusted) gives 86% power at 20 pp and a minimum detectable effect of <strong>19 pp</strong>, but the adjustment will help also.</p></li>
 </ul>
 <section id="varying-assumptions---standard-sample-size-calculation" class="level2">
 <h2 class="anchored" data-anchor-id="varying-assumptions---standard-sample-size-calculation"><strong>(1.1) Varying assumptions - Standard sample size calculation</strong></h2>
@@ -652,10 +651,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="varying-effect-size" class="level3">
 <h3 class="anchored" data-anchor-id="varying-effect-size"><strong>(1.1.3) Varying Effect size</strong></h3>
 <p>Varying the effect size: from 25 pp down to 15 pp.</p>
-<p>Keep the baseline prescription rate at 75% (control rate)</p>
+<p>Keep the baseline prescription rate at 78% (control rate)</p>
 <p>Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)</p>
 <p>Keep the CV at 0.1 (will not make any difference if CV = 0)</p>
-<p>Keep ICC at 0.10</p>
+<p>Keep ICC at 0.08</p>
 <p>Plot delta vs power.</p>
 <div class="cell">
 <details class="code-fold">
@@ -725,7 +724,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="varying-effect-size-and-varying-icc" class="level3">
 <h3 class="anchored" data-anchor-id="varying-effect-size-and-varying-icc"><strong>(1.1.4) Varying Effect size and varying ICC</strong></h3>
 <p>3-D plot, varying the effect size (25 pp to 15 pp) &amp; varying ICC (0.02 to 0.10)</p>
-<p>Keep the baseline prescription rate at 75% (control rate)</p>
+<p>Keep the baseline prescription rate at 78% (control rate)</p>
 <p>Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)</p>
 <p>Keep the CV at 0.1 (will not make any difference if CV = 0)</p>
 <div class="cell">
@@ -806,7 +805,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="see-whether-cluster-size-improves-anything-in-terms-of-power" class="level3">
 <h3 class="anchored" data-anchor-id="see-whether-cluster-size-improves-anything-in-terms-of-power"><strong>(1.1.5) See whether cluster size improves anything in terms of power</strong></h3>
 <p>Just a quick check - adding more participants per clusters does not really help</p>
-<p>Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduction, ICC 0.10</p>
+<p>Keeping it fix at the baseline scenario: 13 clusters per arm, 20 pp effect reduction, ICC 0.08</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1709,17 +1708,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="powering-on-a-smaller-effect-power-vs.-delta-at-the-planned-design" class="level2">
 <h2 class="anchored" data-anchor-id="powering-on-a-smaller-effect-power-vs.-delta-at-the-planned-design"><strong>(2.5) Powering on a smaller effect: power vs.&nbsp;delta at the planned design</strong></h2>
-<p>The 25 pp reduction assumed so far is optimistic. Now that the ICC is lower than originally thought, we can power for a lower, more realistic but still clincally meaningful delta, while keeping the planned design of <strong>13 vs 13 clusters</strong> for the main pairwise comparison.</p>
-<p>Everything is held fixed at the planned design - ICC 0.10 (proportion scale), 13 clusters per arm, mean cluster size 40, CV 0.1, control rate 75%, alpha 0.05 - and only the effect size varies, from 25 pp down to 10 pp.&nbsp;The horizontal line marks 80% power; where each curve crosses it is that method’s minimum detectable effect.</p>
+<p>The 25 pp reduction assumed so far is optimistic. Now that the ICC is lower than originally thought, we can power for a lower, more realistic but still clinically meaningful delta, while keeping the planned design of <strong>13 vs 13 clusters</strong> for the main pairwise comparison.</p>
+<p>Everything is held fixed at the planned design - ICC 0.08 (proportion scale), 13 clusters per arm, mean cluster size 40, CV 0.1, control rate 78%, alpha 0.05 - and only the effect size varies, from 25 pp down to 10 pp.&nbsp;The horizontal line marks 80% power; where each curve crosses it is that method’s minimum detectable effect.</p>
 <p>Five curves are shown, because they do not agree and the differences matter:</p>
 <ul>
 <li><p><strong>Closed formula</strong> (chapter 1, with the small-sample t correction).</p></li>
-<li><p><strong>Simulation, cluster-level analysis, symmetric (normal) cluster effects.</strong></p></li>
-<li><p><strong>Simulation, cluster-level analysis, skewed (gamma) cluster effects</strong> - our conservative default.</p></li>
+<li><p><strong>Simulation, cluster-level analysis, symmetric (normal) cluster effects</strong></p></li>
+<li><p><strong>Simulation, cluster-level analysis, skewed (gamma) cluster effects</strong></p></li>
 <li><p><strong>Simulation, GLMM, skewed cluster effects</strong> (glmmPQL with reduced degrees of freedom)</p></li>
-<li><p><strong>Simulation, GLMM, symmetric (normal) cluster effects</strong> (glmmPQL with reduced degrees of freedom)</p></li>
+<li><p><strong>Simulation, GLMM, symmetric (normal) cluster effects</strong> (glmmPQL with reduced degrees of freedom) - our default</p></li>
 </ul>
-<p>All simulations are calibrated so that (a) the realised proportion-scale ICC really is 0.10 under the distribution used, and (b) the marginal (population-average) prevalences really are 75% and 75% minus delta, so that all five curves are answering the same question.</p>
+<p>All simulations are calibrated so that (a) the realised proportion-scale ICC really is 0.08 under the distribution used, and (b) the marginal (population-average) prevalences really are 78% and 78% minus delta, so that all five curves are answering the same question.</p>
 <p>Read the gap between the symmetric and the skewed curves as the cost of the distributional assumption, and the gap between the two skewed curves as the cost of the analysis method. The former is the larger open question for this trial.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1975,9 +1974,9 @@ skew -0.0076 1.4229  0.0019</code></pre>
 <p><strong>Interpretation and known limitations:</strong></p>
 <ul>
 <li><p>Type I error is correctly calibrated at roughly 5% for all cluster-effect distributions and at both 26 and 16 clusters. The cluster-level t-test with the 0.5 continuity correction is valid in this regime, so the power estimates can be trusted.</p></li>
-<li><p>Where the “skewed distribution” power penalty comes from: It is worth being precise about this, because it drives the results in chapter 2.5. Holding σ_b fixed and only changing the <em>shape</em> of u_j costs almost nothing. The entire penalty appears only once we insist that each distribution reproduce the <em>same proportion-scale ICC of 0.08</em>: the gamma then needs σ_b = 0.892 rather than 0.702, and power at a 20 pp effect falls from 0.888 to 0.760. The reason is that the gamma’s long right tail pushes cluster probabilities up against the ceiling of 1 (the control rate is already 0.78), where they add little to Var(p_j); to hit a given proportion-scale ICC it therefore needs much more variance on the log-odds scale - which is precisely the scale the analysis works on. So the conservative gamma scenario is really a statement about how much log-odds heterogeneity is implied by an observed ICC of 0.08, not about skewness per se. The under-5 pilot shows symmetric facility log-odds (skew +0.14, Shapiro-Wilk p = 0.32), so the symmetric curves in chapter 2.5 are the primary planning basis and the gamma is retained as a stress test.</p></li>
-<li><p><strong>The effect size is now specified on the marginal (population-average) scale</strong>, matching what the closed formula in chapter 1 assumes and what “a 20 pp reduction in prescribing” means in the protocol. This was previously wrong and was the single largest source of disagreement between chapters 1 and 2: setting <code>beta0 = qlogis(p0)</code> and <code>beta1 = log(OR)</code> makes 0.78 and 0.58 the <em>cluster-specific</em> probabilities (those of a cluster with u_j = 0), and averaging over u_j pulls both toward 0.5, so the nominal 20 pp actually generated a marginal 0.759 -&gt; 0.572, i.e.&nbsp;only <strong>18.7 pp</strong>. <code>calibrate_marginal()</code> now solves for both coefficients so the marginal prevalences are exactly p0 and p1.</p></li>
-<li><p>Under symmetry the closed form and the simulation now agree closely once both are asked for the same marginal effect. Type I error is unchanged at ~0.05 after calibration, confirming the extra power is real and not an artefact of a broken test.</p></li>
+<li><p>The “skewed distribution” power penalty: Holding σ_b fixed and only changing the <em>shape</em> of u_j costs almost nothing. The entire penalty appears only once we insist that each distribution reproduce the <em>same proportion-scale ICC of 0.08</em>: the gamma then needs σ_b = 0.892 rather than 0.702, and power at a 20 pp effect falls from 0.888 to 0.760. The reason is that the gamma’s long right tail pushes cluster probabilities up against the ceiling of 1 (the control rate is already 0.78), where they add little to Var(p_j); to hit a given proportion-scale ICC it therefore needs much more variance on the log-odds scale - which is precisely the scale the analysis works on. So the conservative gamma scenario is really a statement about how much log-odds heterogeneity is implied by an observed ICC of 0.08, not about skewness per se. The under-5 pilot shows symmetric facility log-odds (skew +0.14, Shapiro-Wilk p = 0.32).</p></li>
+<li><p>The effect size is specified on the marginal (population-average) scale, matching what the closed formula in chapter 1 assumes and what “a 20 pp reduction in prescribing” (see protocol).</p></li>
+<li><p>Under symmetry the closed form and the simulation agree quite closely.</p></li>
 </ul>
 </section>
 </section>
@@ -2853,31 +2852,33 @@ Number of Groups: 26 </code></pre>
 </section>
 <section id="stratified-randomization-algorithm" class="level1">
 <h1><strong>(4) Stratified randomization algorithm</strong></h1>
-<section id="minimization" class="level2">
-<h2 class="anchored" data-anchor-id="minimization"><strong>(4.1) Minimization</strong></h2>
-<p>Following the method proposed in [Xiao L, Yank V, Ma J. Algorithm for balancing both continuous and categorical covariates in randomized controlled trials.&nbsp;<em>Comput Methods Programs Biomed</em>. 2012;108(3):1185-1190. doi:10.1016/j.cmpb.2012.06.001](<a href="https://pubmed.ncbi.nlm.nih.gov/22727633/" class="uri">https://pubmed.ncbi.nlm.nih.gov/22727633/</a>)</p>
-<p>They propose a modified symmetric Kullback–Leibler divergence (KLD) method to balance multi-arm trials. Works the same for a CRT if cluster-level covariates. The KLD method tries to balance both arm sizes and covariates dynamically (and prospectively) as clusters are assigned, but we can also use it with (a) fixed time-point of randomization and (b) fixed arm size (e.g.&nbsp;13:13:13), by setting Dn = 1 and p_Dn = 1. Enforcing such tight group-size balance while still allow minimization on covariates. In other words, it removes randomness in group totals but keeps balance across covariates =&gt; stratified randomization.</p>
-<p>This has two disadvantages:</p>
-<ol type="1">
-<li>Randomization becomes more predictable (esp.&nbsp;towards the end of allocation)</li>
-<li>Strict equal group sizes may slightly reduce the algorithm’s ability to optimize covariate balance, because sometimes the “best” assignment for covariates would tip the arm sizes temporarily, esp.&nbsp;in case of small number of clusters.</li>
-</ol>
-<p>Number (1) is not a problem in our case since we randomize all at once. Number (2) is the best we can get.</p>
-<p>The method works as follows: For the (n+1)th cluster: compute the “amount of imbalance” (using KLD imbalance score) assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value. They recommend: Pk = c(0.8, 0.1, 0.1): the covariate-balance biased-coin probabilities. 80% chance of choosing the arm with the smallest imbalance, 10% chance for the second-smallest, 10% chance for the worst. If all three arms tie, then average all slots (0.8+0.1+0.1)/3 = 0.333 (simple randomization)</p>
-<p>Dn: maximum tolerated size imbalance before intervening</p>
-<p>p_Dn: probability of forcing assignment to the smallest group once that imbalance is exceeded</p>
+<section id="covariate-constrained-randomization" class="level2">
+<h2 class="anchored" data-anchor-id="covariate-constrained-randomization"><strong>(4.1) Covariate-constrained randomization</strong></h2>
+<p>If we use batch-randomization (all clusters randomized at once and no new clusters entering later), a simple covariate-constrained randomization is preferred: <a href="https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/" class="uri">https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/</a></p>
 <ul>
-<li>if any arm is ahead by ≥1 cluster, the next cluster is forced to the smallest arm. The “numbers-balance” rule (Sec. 2.3); they introduce p_Dn to reduce predictability vs.&nbsp;setting it to 1, but allow either.</li>
+<li><p>Exact 1:1:1 overall allocation:</p>
+<ul>
+<li>13 Control / 13 Intervention 1 / 13 Intervention 2</li>
+</ul></li>
+<li><p>Soft stratification for “island”:</p>
+<ul>
+<li><p>Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms</p></li>
+<li><p>But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)</p></li>
+</ul></li>
+<li><p>Global numeric balance re antibiotic_rate and attendance_rate:</p>
+<ul>
+<li>Optimise re mean difference between arms</li>
+<li>Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)</li>
+<li>Equal weight for the two continuous covariates because they’re standardized and equally important</li>
+</ul></li>
+<li><p>Random selection among best allocations to preserve randomness, while enforcing optimal balance</p></li>
 </ul>
-<p>The first 2 sequences (here 6 clusters) are allocated as a permuted block - two per arm - before using minimization. This ensures early variance estimates exist for the KLD and mirrors the recommended start.</p>
-<p>The symmetric-KLD part assumes approximate normality for continuous covariates (but they note high robustness even in case of violation)</p>
-<p>We demonstrate it on a hypothetical allocation dataset, but will eventually feed the same code with the real allocation dataset.</p>
 <p>Structure of allocation dataset:</p>
 <ol type="1">
 <li>cluster_id: 1-39</li>
 <li>antibiotic_rate
 <ul>
-<li><p>Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?</p></li>
+<li><p>Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.</p></li>
 <li><p>Proportion, ranging from 0.44-0.87</p></li>
 </ul></li>
 <li>attendance_rate
@@ -2897,7 +2898,7 @@ Number of Groups: 26 </code></pre>
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20250820</span>)</span>
 <span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb120-3"><a href="#cb120-3" aria-hidden="true" tabindex="-1"></a><span class="co"># create hypothetical allocation dataset</span></span>
+<span id="cb120-3"><a href="#cb120-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create hypothetical allocation dataset</span></span>
 <span id="cb120-4"><a href="#cb120-4" aria-hidden="true" tabindex="-1"></a>n_clusters <span class="ot">&lt;-</span> <span class="dv">39</span></span>
 <span id="cb120-5"><a href="#cb120-5" aria-hidden="true" tabindex="-1"></a>cluster_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb120-6"><a href="#cb120-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">cluster_id =</span> <span class="dv">1</span><span class="sc">:</span>n_clusters,</span>
@@ -2951,396 +2952,73 @@ Number of Groups: 26 </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameters for minimization</span></span>
-<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>n_arms <span class="ot">&lt;-</span> <span class="dv">3</span></span>
-<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a>Dn <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb122-4"><a href="#cb122-4" aria-hidden="true" tabindex="-1"></a>p_Dn <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb122-5"><a href="#cb122-5" aria-hidden="true" tabindex="-1"></a>Pk <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>)</span>
-<span id="cb122-6"><a href="#cb122-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-7"><a href="#cb122-7" aria-hidden="true" tabindex="-1"></a><span class="do">## Symmetric KLD for continuous covariates</span></span>
-<span id="cb122-8"><a href="#cb122-8" aria-hidden="true" tabindex="-1"></a><span class="co"># the mean-difference term scaled by inverse variances plus a variance-term, summed over covariates, with the 0.5 factor (Eq. (1), continuous part). A tiny eps stabilizes near-zero variances.</span></span>
-<span id="cb122-9"><a href="#cb122-9" aria-hidden="true" tabindex="-1"></a>symKLD_cont <span class="ot">&lt;-</span> <span class="cf">function</span>(Xi, Xj, <span class="at">eps =</span> <span class="fl">1e-8</span>) {</span>
-<span id="cb122-10"><a href="#cb122-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Xi, Xj : matrices with columns = continuous covariates</span></span>
-<span id="cb122-11"><a href="#cb122-11" aria-hidden="true" tabindex="-1"></a>  mu_i <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(Xi)</span>
-<span id="cb122-12"><a href="#cb122-12" aria-hidden="true" tabindex="-1"></a>  mu_j <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(Xj)</span>
-<span id="cb122-13"><a href="#cb122-13" aria-hidden="true" tabindex="-1"></a>  v_i  <span class="ot">&lt;-</span> <span class="fu">apply</span>(Xi, <span class="dv">2</span>, var)</span>
-<span id="cb122-14"><a href="#cb122-14" aria-hidden="true" tabindex="-1"></a>  v_j  <span class="ot">&lt;-</span> <span class="fu">apply</span>(Xj, <span class="dv">2</span>, var)</span>
-<span id="cb122-15"><a href="#cb122-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># stabilize in case of near-constant covariate within an arm</span></span>
-<span id="cb122-16"><a href="#cb122-16" aria-hidden="true" tabindex="-1"></a>  v_i  <span class="ot">&lt;-</span> <span class="fu">pmax</span>(v_i, eps)</span>
-<span id="cb122-17"><a href="#cb122-17" aria-hidden="true" tabindex="-1"></a>  v_j  <span class="ot">&lt;-</span> <span class="fu">pmax</span>(v_j, eps)</span>
-<span id="cb122-18"><a href="#cb122-18" aria-hidden="true" tabindex="-1"></a>  term_mu  <span class="ot">&lt;-</span> ((mu_i <span class="sc">-</span> mu_j)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">/</span> v_i <span class="sc">+</span> <span class="dv">1</span> <span class="sc">/</span> v_j)</span>
-<span id="cb122-19"><a href="#cb122-19" aria-hidden="true" tabindex="-1"></a>  term_var <span class="ot">&lt;-</span> (v_i <span class="sc">+</span> v_j) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">/</span> v_i <span class="sc">+</span> <span class="dv">1</span> <span class="sc">/</span> v_j) <span class="sc">-</span> <span class="dv">2</span></span>
-<span id="cb122-20"><a href="#cb122-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 0.5 * sum over covariates</span></span>
-<span id="cb122-21"><a href="#cb122-21" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">sum</span>(term_mu <span class="sc">+</span> term_var)</span>
-<span id="cb122-22"><a href="#cb122-22" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-23"><a href="#cb122-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-24"><a href="#cb122-24" aria-hidden="true" tabindex="-1"></a><span class="do">## Symmetric KLD for categorical variables</span></span>
-<span id="cb122-25"><a href="#cb122-25" aria-hidden="true" tabindex="-1"></a>symKLD_cat <span class="ot">&lt;-</span> <span class="cf">function</span>(fac_i, fac_j, <span class="at">eps =</span> <span class="fl">1e-8</span>) {</span>
-<span id="cb122-26"><a href="#cb122-26" aria-hidden="true" tabindex="-1"></a>  cats <span class="ot">&lt;-</span> <span class="fu">levels</span>(<span class="fu">factor</span>(<span class="fu">c</span>(fac_i, fac_j)))</span>
-<span id="cb122-27"><a href="#cb122-27" aria-hidden="true" tabindex="-1"></a>  p_i <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(<span class="fu">table</span>(<span class="fu">factor</span>(fac_i, <span class="at">levels =</span> cats)))</span>
-<span id="cb122-28"><a href="#cb122-28" aria-hidden="true" tabindex="-1"></a>  p_j <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(<span class="fu">table</span>(<span class="fu">factor</span>(fac_j, <span class="at">levels =</span> cats)))</span>
-<span id="cb122-29"><a href="#cb122-29" aria-hidden="true" tabindex="-1"></a>  p_i <span class="ot">&lt;-</span> <span class="fu">pmax</span>(p_i, eps)</span>
-<span id="cb122-30"><a href="#cb122-30" aria-hidden="true" tabindex="-1"></a>  p_j <span class="ot">&lt;-</span> <span class="fu">pmax</span>(p_j, eps)</span>
-<span id="cb122-31"><a href="#cb122-31" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.5</span> <span class="sc">*</span> (<span class="fu">sum</span>(p_i <span class="sc">*</span> <span class="fu">log</span>(p_i <span class="sc">/</span> p_j)) <span class="sc">+</span> <span class="fu">sum</span>(p_j <span class="sc">*</span> <span class="fu">log</span>(p_j <span class="sc">/</span> p_i)))</span>
-<span id="cb122-32"><a href="#cb122-32" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-33"><a href="#cb122-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-34"><a href="#cb122-34" aria-hidden="true" tabindex="-1"></a><span class="do">## Combined imbalance measure</span></span>
-<span id="cb122-35"><a href="#cb122-35" aria-hidden="true" tabindex="-1"></a>symKLD_mixed <span class="ot">&lt;-</span> <span class="cf">function</span>(Xi, Xj, <span class="at">cont_vars =</span> <span class="fu">character</span>(<span class="dv">0</span>), <span class="at">cat_vars =</span> <span class="fu">character</span>(<span class="dv">0</span>)) {</span>
-<span id="cb122-36"><a href="#cb122-36" aria-hidden="true" tabindex="-1"></a>  D <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb122-37"><a href="#cb122-37" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(cont_vars) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb122-38"><a href="#cb122-38" aria-hidden="true" tabindex="-1"></a>    D <span class="ot">&lt;-</span> D <span class="sc">+</span> <span class="fu">symKLD_cont</span>(Xi[, cont_vars, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
-<span id="cb122-39"><a href="#cb122-39" aria-hidden="true" tabindex="-1"></a>                         Xj[, cont_vars, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb122-40"><a href="#cb122-40" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-41"><a href="#cb122-41" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(cat_vars) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb122-42"><a href="#cb122-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (v <span class="cf">in</span> cat_vars) {</span>
-<span id="cb122-43"><a href="#cb122-43" aria-hidden="true" tabindex="-1"></a>      D <span class="ot">&lt;-</span> D <span class="sc">+</span> <span class="fu">symKLD_cat</span>(Xi[[v]], Xj[[v]])</span>
-<span id="cb122-44"><a href="#cb122-44" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb122-45"><a href="#cb122-45" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-46"><a href="#cb122-46" aria-hidden="true" tabindex="-1"></a>  D</span>
-<span id="cb122-47"><a href="#cb122-47" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-48"><a href="#cb122-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-49"><a href="#cb122-49" aria-hidden="true" tabindex="-1"></a><span class="do">## Total imbalance function using mixed covariates</span></span>
-<span id="cb122-50"><a href="#cb122-50" aria-hidden="true" tabindex="-1"></a><span class="do">## Multi-arm extension and “what-if” evaluation (Sec. 2.1–2.4)</span></span>
-<span id="cb122-51"><a href="#cb122-51" aria-hidden="true" tabindex="-1"></a><span class="co"># For the (n+1)th cluster: compute the “amount of imbalance” assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value (Algorithm Step 4; di construction extended to T &gt; 2 arms). The function pretends to assign the cluster to arm g and sums the pairwise KLDs across all unordered arm pairs under that hypothetical allocation. Terms not affected by the placement cancel in comparisons, so minimizing this total is equivalent to minimizing the paper’s di ranking.</span></span>
-<span id="cb122-52"><a href="#cb122-52" aria-hidden="true" tabindex="-1"></a>total_imbalance_if <span class="ot">&lt;-</span> <span class="cf">function</span>(alloc, data, idx, g, n_arms,</span>
-<span id="cb122-53"><a href="#cb122-53" aria-hidden="true" tabindex="-1"></a>                               <span class="at">cont_vars =</span> <span class="fu">character</span>(<span class="dv">0</span>), <span class="at">cat_vars =</span> <span class="fu">character</span>(<span class="dv">0</span>)) {</span>
-<span id="cb122-54"><a href="#cb122-54" aria-hidden="true" tabindex="-1"></a>  tmp <span class="ot">&lt;-</span> alloc</span>
-<span id="cb122-55"><a href="#cb122-55" aria-hidden="true" tabindex="-1"></a>  tmp[idx] <span class="ot">&lt;-</span> g</span>
-<span id="cb122-56"><a href="#cb122-56" aria-hidden="true" tabindex="-1"></a>  arm_X <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span>n_arms, <span class="cf">function</span>(a) data[tmp <span class="sc">==</span> a, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb122-57"><a href="#cb122-57" aria-hidden="true" tabindex="-1"></a>  D <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb122-58"><a href="#cb122-58" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(n_arms <span class="sc">-</span> <span class="dv">1</span>)) {</span>
-<span id="cb122-59"><a href="#cb122-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (j <span class="cf">in</span> (i <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>n_arms) {</span>
-<span id="cb122-60"><a href="#cb122-60" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">nrow</span>(arm_X[[i]]) <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;&amp;</span> <span class="fu">nrow</span>(arm_X[[j]]) <span class="sc">&gt;=</span> <span class="dv">2</span>) {</span>
-<span id="cb122-61"><a href="#cb122-61" aria-hidden="true" tabindex="-1"></a>        D <span class="ot">&lt;-</span> D <span class="sc">+</span> <span class="fu">symKLD_mixed</span>(arm_X[[i]], arm_X[[j]],</span>
-<span id="cb122-62"><a href="#cb122-62" aria-hidden="true" tabindex="-1"></a>                              cont_vars, cat_vars)</span>
-<span id="cb122-63"><a href="#cb122-63" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
-<span id="cb122-64"><a href="#cb122-64" aria-hidden="true" tabindex="-1"></a>        D <span class="ot">&lt;-</span> D <span class="sc">+</span> <span class="fl">1e6</span>  <span class="co"># small penalty if too few per arm</span></span>
-<span id="cb122-65"><a href="#cb122-65" aria-hidden="true" tabindex="-1"></a>      }</span>
-<span id="cb122-66"><a href="#cb122-66" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb122-67"><a href="#cb122-67" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-68"><a href="#cb122-68" aria-hidden="true" tabindex="-1"></a>  D</span>
-<span id="cb122-69"><a href="#cb122-69" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-70"><a href="#cb122-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-71"><a href="#cb122-71" aria-hidden="true" tabindex="-1"></a><span class="do">## convert imbalance vector d_i to assignment probabilities with proper tie-averaging</span></span>
-<span id="cb122-72"><a href="#cb122-72" aria-hidden="true" tabindex="-1"></a><span class="co"># smaller di ⇒ larger probability; if multiple arms tie, average the corresponding P_k positions so tied arms receive the same probability (Sec. 2.2). Normalizing ensures a proper probability vector.</span></span>
-<span id="cb122-73"><a href="#cb122-73" aria-hidden="true" tabindex="-1"></a>probs_from_di <span class="ot">&lt;-</span> <span class="cf">function</span>(di, Pk) {</span>
-<span id="cb122-74"><a href="#cb122-74" aria-hidden="true" tabindex="-1"></a>  K <span class="ot">&lt;-</span> <span class="fu">length</span>(di)</span>
-<span id="cb122-75"><a href="#cb122-75" aria-hidden="true" tabindex="-1"></a>  o <span class="ot">&lt;-</span> <span class="fu">order</span>(di)<span class="co"># ranks by increasing imbalance</span></span>
-<span id="cb122-76"><a href="#cb122-76" aria-hidden="true" tabindex="-1"></a>  probs <span class="ot">&lt;-</span> <span class="fu">numeric</span>(K)</span>
-<span id="cb122-77"><a href="#cb122-77" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb122-78"><a href="#cb122-78" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (tie <span class="cf">in</span> <span class="fu">split</span>(o, di[o])) {</span>
-<span id="cb122-79"><a href="#cb122-79" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> <span class="fu">length</span>(tie)</span>
-<span id="cb122-80"><a href="#cb122-80" aria-hidden="true" tabindex="-1"></a>    <span class="co"># slots for this tie = pos...(pos+k-1)</span></span>
-<span id="cb122-81"><a href="#cb122-81" aria-hidden="true" tabindex="-1"></a>    probs[tie] <span class="ot">&lt;-</span> <span class="fu">mean</span>(Pk[pos<span class="sc">:</span>(pos <span class="sc">+</span> k <span class="sc">-</span> <span class="dv">1</span>)])</span>
-<span id="cb122-82"><a href="#cb122-82" aria-hidden="true" tabindex="-1"></a>    pos <span class="ot">&lt;-</span> pos <span class="sc">+</span> k</span>
-<span id="cb122-83"><a href="#cb122-83" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-84"><a href="#cb122-84" aria-hidden="true" tabindex="-1"></a>  <span class="co"># normalize, just in case rounding makes probs not sum exactly to 1</span></span>
-<span id="cb122-85"><a href="#cb122-85" aria-hidden="true" tabindex="-1"></a>  probs <span class="sc">/</span> <span class="fu">sum</span>(probs)</span>
-<span id="cb122-86"><a href="#cb122-86" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-87"><a href="#cb122-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-88"><a href="#cb122-88" aria-hidden="true" tabindex="-1"></a><span class="do">## main randomization</span></span>
-<span id="cb122-89"><a href="#cb122-89" aria-hidden="true" tabindex="-1"></a>alloc <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, n_clusters)</span>
-<span id="cb122-90"><a href="#cb122-90" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-91"><a href="#cb122-91" aria-hidden="true" tabindex="-1"></a><span class="do">## Start with permuted block (first 2T = 6 clusters: 2 per arm)</span></span>
-<span id="cb122-92"><a href="#cb122-92" aria-hidden="true" tabindex="-1"></a>init_ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n_clusters, <span class="dv">2</span> <span class="sc">*</span> n_arms)</span>
-<span id="cb122-93"><a href="#cb122-93" aria-hidden="true" tabindex="-1"></a>alloc[init_ids] <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_arms, <span class="at">each=</span><span class="dv">2</span>)</span>
-<span id="cb122-94"><a href="#cb122-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-95"><a href="#cb122-95" aria-hidden="true" tabindex="-1"></a><span class="do">## MAIN LOOP</span></span>
-<span id="cb122-96"><a href="#cb122-96" aria-hidden="true" tabindex="-1"></a>cont_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"antibiotic_rate"</span>, <span class="st">"attendance_rate"</span>)</span>
-<span id="cb122-97"><a href="#cb122-97" aria-hidden="true" tabindex="-1"></a>cat_vars  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"island"</span>)  <span class="co"># your new binary covariate</span></span>
-<span id="cb122-98"><a href="#cb122-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-99"><a href="#cb122-99" aria-hidden="true" tabindex="-1"></a><span class="co"># Remaining clusters to allocate</span></span>
-<span id="cb122-100"><a href="#cb122-100" aria-hidden="true" tabindex="-1"></a>remaining <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n_clusters, <span class="fu">which</span>(<span class="sc">!</span><span class="fu">is.na</span>(alloc)))</span>
-<span id="cb122-101"><a href="#cb122-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-102"><a href="#cb122-102" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (cl <span class="cf">in</span> remaining) {</span>
-<span id="cb122-103"><a href="#cb122-103" aria-hidden="true" tabindex="-1"></a>  <span class="co"># current group-size imbalance (ignore NA entries)</span></span>
-<span id="cb122-104"><a href="#cb122-104" aria-hidden="true" tabindex="-1"></a>  group_sizes <span class="ot">&lt;-</span> <span class="fu">tabulate</span>(alloc[<span class="sc">!</span><span class="fu">is.na</span>(alloc)], <span class="at">nbins =</span> n_arms)</span>
-<span id="cb122-105"><a href="#cb122-105" aria-hidden="true" tabindex="-1"></a>  <span class="co"># group_sizes &lt;- tabulate(factor(alloc, levels = 1:n_arms), nbins = n_arms)</span></span>
-<span id="cb122-106"><a href="#cb122-106" aria-hidden="true" tabindex="-1"></a>  max_diff <span class="ot">&lt;-</span> <span class="fu">max</span>(group_sizes) <span class="sc">-</span> <span class="fu">min</span>(group_sizes)</span>
-<span id="cb122-107"><a href="#cb122-107" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-108"><a href="#cb122-108" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (max_diff <span class="sc">&gt;=</span> Dn) {</span>
-<span id="cb122-109"><a href="#cb122-109" aria-hidden="true" tabindex="-1"></a>    min_group <span class="ot">&lt;-</span> <span class="fu">which.min</span>(group_sizes)</span>
-<span id="cb122-110"><a href="#cb122-110" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">runif</span>(<span class="dv">1</span>) <span class="sc">&lt;</span> p_Dn) {</span>
-<span id="cb122-111"><a href="#cb122-111" aria-hidden="true" tabindex="-1"></a>      alloc[cl] <span class="ot">&lt;-</span> min_group</span>
-<span id="cb122-112"><a href="#cb122-112" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
-<span id="cb122-113"><a href="#cb122-113" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb122-114"><a href="#cb122-114" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-115"><a href="#cb122-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-116"><a href="#cb122-116" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Compute D_i (hypothetical imbalances) for assigning this cluster to each arm</span></span>
-<span id="cb122-117"><a href="#cb122-117" aria-hidden="true" tabindex="-1"></a>  di <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>n_arms, <span class="cf">function</span>(g)</span>
-<span id="cb122-118"><a href="#cb122-118" aria-hidden="true" tabindex="-1"></a>  <span class="fu">total_imbalance_if</span>(alloc, cluster_data, cl, g, n_arms,</span>
-<span id="cb122-119"><a href="#cb122-119" aria-hidden="true" tabindex="-1"></a>                     cont_vars, cat_vars))</span>
-<span id="cb122-120"><a href="#cb122-120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-121"><a href="#cb122-121" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Translate to assignment probabilities with tie-averaging -&gt; Pk probabilities</span></span>
-<span id="cb122-122"><a href="#cb122-122" aria-hidden="true" tabindex="-1"></a>  prob_vec <span class="ot">&lt;-</span> <span class="fu">probs_from_di</span>(di, Pk)</span>
-<span id="cb122-123"><a href="#cb122-123" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-124"><a href="#cb122-124" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Safety fallback</span></span>
-<span id="cb122-125"><a href="#cb122-125" aria-hidden="true" tabindex="-1"></a>  <span class="co"># If for some reason prob_vec is invalid (all zeros, or has NA), then the algorithm falls back to equal randomization (1/3 each)</span></span>
-<span id="cb122-126"><a href="#cb122-126" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">all</span>(prob_vec <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">||</span> <span class="fu">any</span>(<span class="fu">is.na</span>(prob_vec))) {</span>
-<span id="cb122-127"><a href="#cb122-127" aria-hidden="true" tabindex="-1"></a>    prob_vec <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span>n_arms, n_arms)</span>
-<span id="cb122-128"><a href="#cb122-128" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb122-129"><a href="#cb122-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-130"><a href="#cb122-130" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Assign cluster using these probabilities</span></span>
-<span id="cb122-131"><a href="#cb122-131" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This is the actual biased-coin randomization step; chooses one of the arms 1, 2, 3, according to prob_vec</span></span>
-<span id="cb122-132"><a href="#cb122-132" aria-hidden="true" tabindex="-1"></a>  alloc[cl] <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(n_arms, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> prob_vec)</span>
-<span id="cb122-133"><a href="#cb122-133" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-134"><a href="#cb122-134" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb122-135"><a href="#cb122-135" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-136"><a href="#cb122-136" aria-hidden="true" tabindex="-1"></a><span class="co"># attach allocation</span></span>
-<span id="cb122-137"><a href="#cb122-137" aria-hidden="true" tabindex="-1"></a>cluster_data<span class="sc">$</span>arm <span class="ot">&lt;-</span> alloc</span>
-<span id="cb122-138"><a href="#cb122-138" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb122-139"><a href="#cb122-139" aria-hidden="true" tabindex="-1"></a><span class="co"># quick sanity check</span></span>
-<span id="cb122-140"><a href="#cb122-140" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(cluster_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>   cluster_id antibiotic_rate attendance_rate island arm
-1           1       0.8175535             389 Unguja   2
-2           2       0.4593160             652 Unguja   1
-3           3       0.8621713             372 Unguja   3
-4           4       0.7707444             604  Pemba   1
-5           5       0.4551056            1254  Pemba   2
-6           6       0.6258714             329 Unguja   3
-7           7       0.6704471            1587 Unguja   2
-8           8       0.4909854            1300 Unguja   1
-9           9       0.4857333            1092 Unguja   3
-10         10       0.8505579             615 Unguja   2
-11         11       0.6766742             827  Pemba   2
-12         12       0.4758405            1220  Pemba   1
-13         13       0.4410584             220 Unguja   3
-14         14       0.7559218            1209  Pemba   1
-15         15       0.4635024             546 Unguja   3
-16         16       0.5350358             351 Unguja   1
-17         17       0.8120696            1227  Pemba   3
-18         18       0.7226116             902 Unguja   2
-19         19       0.5457951            1321 Unguja   1
-20         20       0.6043556            1405 Unguja   2
-21         21       0.4889210             561 Unguja   2
-22         22       0.7520059            1124  Pemba   3
-23         23       0.8496349            1692  Pemba   2
-24         24       0.5743991            1941 Unguja   3
-25         25       0.5006325            1005 Unguja   1
-26         26       0.8609247            1735  Pemba   1
-27         27       0.8012171            1581 Unguja   3
-28         28       0.5604527            1544 Unguja   1
-29         29       0.8319907            1630 Unguja   2
-30         30       0.4641657            1164  Pemba   3
-31         31       0.5750356            1382 Unguja   1
-32         32       0.8478091            1822 Unguja   2
-33         33       0.7960053             683 Unguja   3
-34         34       0.4691478            1317  Pemba   3
-35         35       0.5454399             463 Unguja   1
-36         36       0.7230553            1044 Unguja   2
-37         37       0.7860256             968  Pemba   2
-38         38       0.7082810            1777 Unguja   1
-39         39       0.6951461             469 Unguja   3</code></pre>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(cluster_data<span class="sc">$</span>arm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>
- 1  2  3 
-13 13 13 </code></pre>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">aggregate</span>(cluster_data[, <span class="fu">c</span>(<span class="st">"antibiotic_rate"</span>, <span class="st">"attendance_rate"</span>)],</span>
-<span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">by =</span> <span class="fu">list</span>(<span class="at">arm =</span> cluster_data<span class="sc">$</span>arm), mean))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>  arm antibiotic_rate attendance_rate
-1   1       0.5988004       1120.2308
-2   2       0.7172879       1130.4615
-3   3       0.6340379        928.0769</code></pre>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>island_table <span class="ot">&lt;-</span> <span class="fu">table</span>(cluster_data<span class="sc">$</span>arm, cluster_data<span class="sc">$</span>island)</span>
-<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>island_prop <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(island_table, <span class="at">margin =</span> <span class="dv">1</span>)</span>
-<span id="cb128-3"><a href="#cb128-3" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(<span class="fu">t</span>(island_prop),</span>
-<span id="cb128-4"><a href="#cb128-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">beside =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb128-5"><a href="#cb128-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"tomato"</span>),</span>
-<span id="cb128-6"><a href="#cb128-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.text =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb128-7"><a href="#cb128-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">args.legend =</span> <span class="fu">list</span>(<span class="at">title =</span> <span class="st">"Island"</span>, <span class="at">x =</span> <span class="st">"topright"</span>),</span>
-<span id="cb128-8"><a href="#cb128-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">xlab =</span> <span class="st">"Arm"</span>, <span class="at">ylab =</span> <span class="st">"Proportion"</span>, <span class="at">main =</span> <span class="st">"Island distribution across arms"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="covariate-constrained-randomization" class="level2">
-<h2 class="anchored" data-anchor-id="covariate-constrained-randomization"><strong>(4.2) Covariate-constrained randomization</strong></h2>
-<p>If we use batch-randomization (all clusters randomized at once and no new clusters entering later), the probably simple covariate-constrained randomization to be used: <a href="https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/" class="uri">https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/</a></p>
-<ul>
-<li><p>Exact 1:1:1 overall allocation:</p>
-<ul>
-<li>13 Control / 13 Intervention 1 / 13 Intervention 2</li>
-</ul></li>
-<li><p>Soft stratification for “island”:</p>
-<ul>
-<li><p>Within island it should roughly be balance in terms of 1:1 intervention: control, across the 3 arms</p></li>
-<li><p>But we prioritize balancing the continuous covariates (below) over exact island distribution (deviation from ideal 1:1:1 allowed)</p></li>
-</ul></li>
-<li><p>Global numeric balance re antibiotic_rate and attendance_rate:</p>
-<ul>
-<li>Optimise re mean difference between arms</li>
-<li>Both covariates are standardized (z-scores) so they contribute equally to the balance metric, preventing attendance_rate from dominating (attendance_rate has much larger magnitude than antibiotic_rate)</li>
-<li>Equal weight for the two continuous covariates because they’re standardized and equally important</li>
-</ul></li>
-<li><p>Random selection among best allocations to preserve randomness, while enforcing optimal balance</p></li>
-</ul>
-<p>Structure of allocation dataset:</p>
-<ol type="1">
-<li>cluster_id: 1-39</li>
-<li>antibiotic_rate
-<ul>
-<li><p>Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year.</p></li>
-<li><p>Proportion, ranging from 0.44-0.87</p></li>
-</ul></li>
-<li>attendance_rate
-<ul>
-<li><p>All patients presenting at the participating cluster, per month, mean over past year</p></li>
-<li><p>Absolute count, ranging from 200-2000</p></li>
-</ul></li>
-<li>island
-<ul>
-<li>Pemba vs Unguja</li>
-<li>30:70</li>
-</ul></li>
-<li>arm: allocation 1-3</li>
-</ol>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb129"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20250820</span>)</span>
-<span id="cb129-2"><a href="#cb129-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb129-3"><a href="#cb129-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create hypothetical allocation dataset</span></span>
-<span id="cb129-4"><a href="#cb129-4" aria-hidden="true" tabindex="-1"></a>n_clusters <span class="ot">&lt;-</span> <span class="dv">39</span></span>
-<span id="cb129-5"><a href="#cb129-5" aria-hidden="true" tabindex="-1"></a>cluster_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb129-6"><a href="#cb129-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">cluster_id =</span> <span class="dv">1</span><span class="sc">:</span>n_clusters,</span>
-<span id="cb129-7"><a href="#cb129-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">antibiotic_rate =</span> <span class="fu">runif</span>(n_clusters, <span class="fl">0.44</span>, <span class="fl">0.87</span>),</span>
-<span id="cb129-8"><a href="#cb129-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">attendance_rate =</span> <span class="fu">sample</span>(<span class="dv">200</span><span class="sc">:</span><span class="dv">2000</span>, n_clusters, <span class="cn">TRUE</span>),</span>
-<span id="cb129-9"><a href="#cb129-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">island =</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(<span class="fu">rbinom</span>(n_clusters, <span class="dv">1</span>, <span class="at">prob =</span> <span class="fl">0.3</span>) <span class="sc">==</span> <span class="dv">1</span>, <span class="st">"Pemba"</span>, <span class="st">"Unguja"</span>))</span>
-<span id="cb129-10"><a href="#cb129-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb129-11"><a href="#cb129-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(cluster_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>   cluster_id antibiotic_rate attendance_rate island
-1           1       0.8175535             389 Unguja
-2           2       0.4593160             652 Unguja
-3           3       0.8621713             372 Unguja
-4           4       0.7707444             604  Pemba
-5           5       0.4551056            1254  Pemba
-6           6       0.6258714             329 Unguja
-7           7       0.6704471            1587 Unguja
-8           8       0.4909854            1300 Unguja
-9           9       0.4857333            1092 Unguja
-10         10       0.8505579             615 Unguja
-11         11       0.6766742             827  Pemba
-12         12       0.4758405            1220  Pemba
-13         13       0.4410584             220 Unguja
-14         14       0.7559218            1209  Pemba
-15         15       0.4635024             546 Unguja
-16         16       0.5350358             351 Unguja
-17         17       0.8120696            1227  Pemba
-18         18       0.7226116             902 Unguja
-19         19       0.5457951            1321 Unguja
-20         20       0.6043556            1405 Unguja
-21         21       0.4889210             561 Unguja
-22         22       0.7520059            1124  Pemba
-23         23       0.8496349            1692  Pemba
-24         24       0.5743991            1941 Unguja
-25         25       0.5006325            1005 Unguja
-26         26       0.8609247            1735  Pemba
-27         27       0.8012171            1581 Unguja
-28         28       0.5604527            1544 Unguja
-29         29       0.8319907            1630 Unguja
-30         30       0.4641657            1164  Pemba
-31         31       0.5750356            1382 Unguja
-32         32       0.8478091            1822 Unguja
-33         33       0.7960053             683 Unguja
-34         34       0.4691478            1317  Pemba
-35         35       0.5454399             463 Unguja
-36         36       0.7230553            1044 Unguja
-37         37       0.7860256             968  Pemba
-38         38       0.7082810            1777 Unguja
-39         39       0.6951461             469 Unguja</code></pre>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb131"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a><span class="do">### CCR function for global randomisation with 3 arms</span></span>
-<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Create 10000 random allocations</span></span>
-<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Score each allocation: Each allocation gets a balance score based on how well it balances the covariates and island distribution. Lower scores = better balance.</span></span>
-<span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep the top 10%: top_pct = 0.10</span></span>
-<span id="cb131-5"><a href="#cb131-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Randomly pick one from these top 1000</span></span>
-<span id="cb131-6"><a href="#cb131-6" aria-hidden="true" tabindex="-1"></a>run_global_ccr <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">n_sims =</span> <span class="dv">10000</span>, <span class="at">top_pct =</span> <span class="fl">0.10</span>) {</span>
-<span id="cb131-7"><a href="#cb131-7" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(df)</span>
-<span id="cb131-8"><a href="#cb131-8" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb131-9"><a href="#cb131-9" aria-hidden="true" tabindex="-1"></a>  n_per_arm <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">3</span>)</span>
-<span id="cb131-10"><a href="#cb131-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a>  scores <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_sims)</span>
-<span id="cb131-12"><a href="#cb131-12" aria-hidden="true" tabindex="-1"></a>  allocs <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_sims, <span class="at">ncol =</span> n)</span>
-<span id="cb131-13"><a href="#cb131-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb131-14"><a href="#cb131-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_sims) {</span>
-<span id="cb131-15"><a href="#cb131-15" aria-hidden="true" tabindex="-1"></a>    arm_assign <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"Control"</span>, n_per_arm),</span>
-<span id="cb131-16"><a href="#cb131-16" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">rep</span>(<span class="st">"Intervention_A"</span>, n_per_arm),</span>
-<span id="cb131-17"><a href="#cb131-17" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">rep</span>(<span class="st">"Intervention_B"</span>, n_per_arm)))</span>
-<span id="cb131-18"><a href="#cb131-18" aria-hidden="true" tabindex="-1"></a>    allocs[i, ] <span class="ot">&lt;-</span> arm_assign</span>
-<span id="cb131-19"><a href="#cb131-19" aria-hidden="true" tabindex="-1"></a>    temp <span class="ot">&lt;-</span> df</span>
-<span id="cb131-20"><a href="#cb131-20" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>arm <span class="ot">&lt;-</span> arm_assign</span>
-<span id="cb131-21"><a href="#cb131-21" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb131-22"><a href="#cb131-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Standardize covariates to same scale (mean=0, sd=1) for fair comparison</span></span>
-<span id="cb131-23"><a href="#cb131-23" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>antibiotic_rate_std <span class="ot">&lt;-</span> <span class="fu">scale</span>(temp<span class="sc">$</span>antibiotic_rate)</span>
-<span id="cb131-24"><a href="#cb131-24" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>attendance_rate_std <span class="ot">&lt;-</span> <span class="fu">scale</span>(temp<span class="sc">$</span>attendance_rate)</span>
-<span id="cb131-25"><a href="#cb131-25" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb131-26"><a href="#cb131-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate max pairwise difference across all 3 arms</span></span>
-<span id="cb131-27"><a href="#cb131-27" aria-hidden="true" tabindex="-1"></a>    means_abx <span class="ot">&lt;-</span> <span class="fu">tapply</span>(temp<span class="sc">$</span>antibiotic_rate_std, temp<span class="sc">$</span>arm, mean)</span>
-<span id="cb131-28"><a href="#cb131-28" aria-hidden="true" tabindex="-1"></a>    means_att <span class="ot">&lt;-</span> <span class="fu">tapply</span>(temp<span class="sc">$</span>attendance_rate_std, temp<span class="sc">$</span>arm, mean)</span>
-<span id="cb131-29"><a href="#cb131-29" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb131-30"><a href="#cb131-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Max absolute difference across all pairs of arms for both numeric covariates</span></span>
-<span id="cb131-31"><a href="#cb131-31" aria-hidden="true" tabindex="-1"></a>    abx_imbal <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(means_abx[<span class="st">"Control"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_A"</span>]),</span>
-<span id="cb131-32"><a href="#cb131-32" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_abx[<span class="st">"Control"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_B"</span>]),</span>
-<span id="cb131-33"><a href="#cb131-33" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_abx[<span class="st">"Intervention_A"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_B"</span>]))</span>
-<span id="cb131-34"><a href="#cb131-34" aria-hidden="true" tabindex="-1"></a>    att_imbal <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(means_att[<span class="st">"Control"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_A"</span>]),</span>
-<span id="cb131-35"><a href="#cb131-35" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_att[<span class="st">"Control"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_B"</span>]),</span>
-<span id="cb131-36"><a href="#cb131-36" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_att[<span class="st">"Intervention_A"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_B"</span>]))</span>
-<span id="cb131-37"><a href="#cb131-37" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb131-38"><a href="#cb131-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Soft stratification for island: sum of squared differences from ideal allocation per island</span></span>
-<span id="cb131-39"><a href="#cb131-39" aria-hidden="true" tabindex="-1"></a>    island_table <span class="ot">&lt;-</span> <span class="fu">table</span>(temp<span class="sc">$</span>island, temp<span class="sc">$</span>arm)</span>
-<span id="cb131-40"><a href="#cb131-40" aria-hidden="true" tabindex="-1"></a>    ideal_island <span class="ot">&lt;-</span> <span class="fu">table</span>(temp<span class="sc">$</span>island) <span class="sc">/</span> <span class="dv">3</span>  <span class="co"># ideal alloc per arm per island</span></span>
-<span id="cb131-41"><a href="#cb131-41" aria-hidden="true" tabindex="-1"></a>    island_diff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb131-42"><a href="#cb131-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (arm <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Intervention_A"</span>, <span class="st">"Intervention_B"</span>)) {</span>
-<span id="cb131-43"><a href="#cb131-43" aria-hidden="true" tabindex="-1"></a>      island_diff <span class="ot">&lt;-</span> island_diff <span class="sc">+</span> </span>
-<span id="cb131-44"><a href="#cb131-44" aria-hidden="true" tabindex="-1"></a>        <span class="fu">sum</span>((island_table[, arm] <span class="sc">-</span> ideal_island)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb131-45"><a href="#cb131-45" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb131-46"><a href="#cb131-46" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb131-47"><a href="#cb131-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Total score: sum of imbalances with weight for island; Recap:</span></span>
-<span id="cb131-48"><a href="#cb131-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Maximum difference in mean antibiotic rates across the 3 arms (with weight 1.0)</span></span>
-<span id="cb131-49"><a href="#cb131-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Maximum difference in mean attendance rates across the 3 arms (with weight 1.0)</span></span>
-<span id="cb131-50"><a href="#cb131-50" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Island distribution deviation from ideal 1:1:1 across arms (weight 0.01; much smaller weight = "soft" stratification)</span></span>
-<span id="cb131-51"><a href="#cb131-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We prioritize balancing the continuous covariates over exact island distribution</span></span>
-<span id="cb131-52"><a href="#cb131-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Equal weight for the two continuous covariates because they're standardized and equally important</span></span>
-<span id="cb131-53"><a href="#cb131-53" aria-hidden="true" tabindex="-1"></a>    scores[i] <span class="ot">&lt;-</span> abx_imbal <span class="sc">+</span> att_imbal <span class="sc">+</span> <span class="fl">0.01</span> <span class="sc">*</span> island_diff</span>
-<span id="cb131-54"><a href="#cb131-54" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb131-55"><a href="#cb131-55" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb131-56"><a href="#cb131-56" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Select best allocations</span></span>
-<span id="cb131-57"><a href="#cb131-57" aria-hidden="true" tabindex="-1"></a>  threshold <span class="ot">&lt;-</span> <span class="fu">quantile</span>(scores, top_pct)</span>
-<span id="cb131-58"><a href="#cb131-58" aria-hidden="true" tabindex="-1"></a>  best_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(scores <span class="sc">&lt;=</span> threshold)</span>
-<span id="cb131-59"><a href="#cb131-59" aria-hidden="true" tabindex="-1"></a>  chosen <span class="ot">&lt;-</span> <span class="fu">sample</span>(best_idx, <span class="dv">1</span>)</span>
-<span id="cb131-60"><a href="#cb131-60" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb131-61"><a href="#cb131-61" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>final_arm <span class="ot">&lt;-</span> allocs[chosen, ]</span>
-<span id="cb131-62"><a href="#cb131-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df)</span>
-<span id="cb131-63"><a href="#cb131-63" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb131-64"><a href="#cb131-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb131-65"><a href="#cb131-65" aria-hidden="true" tabindex="-1"></a><span class="do">### Run it</span></span>
-<span id="cb131-66"><a href="#cb131-66" aria-hidden="true" tabindex="-1"></a>final_result <span class="ot">&lt;-</span> <span class="fu">run_global_ccr</span>(cluster_data)</span>
-<span id="cb131-67"><a href="#cb131-67" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(final_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="do">### CCR function for global randomisation with 3 arms</span></span>
+<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Create 10000 random allocations</span></span>
+<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Score each allocation: Each allocation gets a balance score based on how well it balances the covariates and island distribution. Lower scores = better balance.</span></span>
+<span id="cb122-4"><a href="#cb122-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep the top 10%: top_pct = 0.10</span></span>
+<span id="cb122-5"><a href="#cb122-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Randomly pick one from these top 1000</span></span>
+<span id="cb122-6"><a href="#cb122-6" aria-hidden="true" tabindex="-1"></a>run_global_ccr <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">n_sims =</span> <span class="dv">10000</span>, <span class="at">top_pct =</span> <span class="fl">0.10</span>) {</span>
+<span id="cb122-7"><a href="#cb122-7" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(df)</span>
+<span id="cb122-8"><a href="#cb122-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb122-9"><a href="#cb122-9" aria-hidden="true" tabindex="-1"></a>  n_per_arm <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">3</span>)</span>
+<span id="cb122-10"><a href="#cb122-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb122-11"><a href="#cb122-11" aria-hidden="true" tabindex="-1"></a>  scores <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_sims)</span>
+<span id="cb122-12"><a href="#cb122-12" aria-hidden="true" tabindex="-1"></a>  allocs <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_sims, <span class="at">ncol =</span> n)</span>
+<span id="cb122-13"><a href="#cb122-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb122-14"><a href="#cb122-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_sims) {</span>
+<span id="cb122-15"><a href="#cb122-15" aria-hidden="true" tabindex="-1"></a>    arm_assign <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"Control"</span>, n_per_arm),</span>
+<span id="cb122-16"><a href="#cb122-16" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">rep</span>(<span class="st">"Intervention_A"</span>, n_per_arm),</span>
+<span id="cb122-17"><a href="#cb122-17" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">rep</span>(<span class="st">"Intervention_B"</span>, n_per_arm)))</span>
+<span id="cb122-18"><a href="#cb122-18" aria-hidden="true" tabindex="-1"></a>    allocs[i, ] <span class="ot">&lt;-</span> arm_assign</span>
+<span id="cb122-19"><a href="#cb122-19" aria-hidden="true" tabindex="-1"></a>    temp <span class="ot">&lt;-</span> df</span>
+<span id="cb122-20"><a href="#cb122-20" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>arm <span class="ot">&lt;-</span> arm_assign</span>
+<span id="cb122-21"><a href="#cb122-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb122-22"><a href="#cb122-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Standardize covariates to same scale (mean=0, sd=1) for fair comparison</span></span>
+<span id="cb122-23"><a href="#cb122-23" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>antibiotic_rate_std <span class="ot">&lt;-</span> <span class="fu">scale</span>(temp<span class="sc">$</span>antibiotic_rate)</span>
+<span id="cb122-24"><a href="#cb122-24" aria-hidden="true" tabindex="-1"></a>    temp<span class="sc">$</span>attendance_rate_std <span class="ot">&lt;-</span> <span class="fu">scale</span>(temp<span class="sc">$</span>attendance_rate)</span>
+<span id="cb122-25"><a href="#cb122-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb122-26"><a href="#cb122-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate max pairwise difference across all 3 arms</span></span>
+<span id="cb122-27"><a href="#cb122-27" aria-hidden="true" tabindex="-1"></a>    means_abx <span class="ot">&lt;-</span> <span class="fu">tapply</span>(temp<span class="sc">$</span>antibiotic_rate_std, temp<span class="sc">$</span>arm, mean)</span>
+<span id="cb122-28"><a href="#cb122-28" aria-hidden="true" tabindex="-1"></a>    means_att <span class="ot">&lt;-</span> <span class="fu">tapply</span>(temp<span class="sc">$</span>attendance_rate_std, temp<span class="sc">$</span>arm, mean)</span>
+<span id="cb122-29"><a href="#cb122-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb122-30"><a href="#cb122-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Max absolute difference across all pairs of arms for both numeric covariates</span></span>
+<span id="cb122-31"><a href="#cb122-31" aria-hidden="true" tabindex="-1"></a>    abx_imbal <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(means_abx[<span class="st">"Control"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_A"</span>]),</span>
+<span id="cb122-32"><a href="#cb122-32" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_abx[<span class="st">"Control"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_B"</span>]),</span>
+<span id="cb122-33"><a href="#cb122-33" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_abx[<span class="st">"Intervention_A"</span>] <span class="sc">-</span> means_abx[<span class="st">"Intervention_B"</span>]))</span>
+<span id="cb122-34"><a href="#cb122-34" aria-hidden="true" tabindex="-1"></a>    att_imbal <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">abs</span>(means_att[<span class="st">"Control"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_A"</span>]),</span>
+<span id="cb122-35"><a href="#cb122-35" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_att[<span class="st">"Control"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_B"</span>]),</span>
+<span id="cb122-36"><a href="#cb122-36" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">abs</span>(means_att[<span class="st">"Intervention_A"</span>] <span class="sc">-</span> means_att[<span class="st">"Intervention_B"</span>]))</span>
+<span id="cb122-37"><a href="#cb122-37" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb122-38"><a href="#cb122-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Soft stratification for island: sum of squared differences from ideal allocation per island</span></span>
+<span id="cb122-39"><a href="#cb122-39" aria-hidden="true" tabindex="-1"></a>    island_table <span class="ot">&lt;-</span> <span class="fu">table</span>(temp<span class="sc">$</span>island, temp<span class="sc">$</span>arm)</span>
+<span id="cb122-40"><a href="#cb122-40" aria-hidden="true" tabindex="-1"></a>    ideal_island <span class="ot">&lt;-</span> <span class="fu">table</span>(temp<span class="sc">$</span>island) <span class="sc">/</span> <span class="dv">3</span>  <span class="co"># ideal alloc per arm per island</span></span>
+<span id="cb122-41"><a href="#cb122-41" aria-hidden="true" tabindex="-1"></a>    island_diff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb122-42"><a href="#cb122-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (arm <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Intervention_A"</span>, <span class="st">"Intervention_B"</span>)) {</span>
+<span id="cb122-43"><a href="#cb122-43" aria-hidden="true" tabindex="-1"></a>      island_diff <span class="ot">&lt;-</span> island_diff <span class="sc">+</span> </span>
+<span id="cb122-44"><a href="#cb122-44" aria-hidden="true" tabindex="-1"></a>        <span class="fu">sum</span>((island_table[, arm] <span class="sc">-</span> ideal_island)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb122-45"><a href="#cb122-45" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb122-46"><a href="#cb122-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb122-47"><a href="#cb122-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Total score: sum of imbalances with weight for island; Recap:</span></span>
+<span id="cb122-48"><a href="#cb122-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Maximum difference in mean antibiotic rates across the 3 arms (with weight 1.0)</span></span>
+<span id="cb122-49"><a href="#cb122-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Maximum difference in mean attendance rates across the 3 arms (with weight 1.0)</span></span>
+<span id="cb122-50"><a href="#cb122-50" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Island distribution deviation from ideal 1:1:1 across arms (weight 0.01; much smaller weight = "soft" stratification)</span></span>
+<span id="cb122-51"><a href="#cb122-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We prioritize balancing the continuous covariates over exact island distribution</span></span>
+<span id="cb122-52"><a href="#cb122-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Equal weight for the two continuous covariates because they're standardized and equally important</span></span>
+<span id="cb122-53"><a href="#cb122-53" aria-hidden="true" tabindex="-1"></a>    scores[i] <span class="ot">&lt;-</span> abx_imbal <span class="sc">+</span> att_imbal <span class="sc">+</span> <span class="fl">0.01</span> <span class="sc">*</span> island_diff</span>
+<span id="cb122-54"><a href="#cb122-54" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb122-55"><a href="#cb122-55" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb122-56"><a href="#cb122-56" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Select best allocations</span></span>
+<span id="cb122-57"><a href="#cb122-57" aria-hidden="true" tabindex="-1"></a>  threshold <span class="ot">&lt;-</span> <span class="fu">quantile</span>(scores, top_pct)</span>
+<span id="cb122-58"><a href="#cb122-58" aria-hidden="true" tabindex="-1"></a>  best_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(scores <span class="sc">&lt;=</span> threshold)</span>
+<span id="cb122-59"><a href="#cb122-59" aria-hidden="true" tabindex="-1"></a>  chosen <span class="ot">&lt;-</span> <span class="fu">sample</span>(best_idx, <span class="dv">1</span>)</span>
+<span id="cb122-60"><a href="#cb122-60" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb122-61"><a href="#cb122-61" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>final_arm <span class="ot">&lt;-</span> allocs[chosen, ]</span>
+<span id="cb122-62"><a href="#cb122-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df)</span>
+<span id="cb122-63"><a href="#cb122-63" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb122-64"><a href="#cb122-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb122-65"><a href="#cb122-65" aria-hidden="true" tabindex="-1"></a><span class="do">### Run it</span></span>
+<span id="cb122-66"><a href="#cb122-66" aria-hidden="true" tabindex="-1"></a>final_result <span class="ot">&lt;-</span> <span class="fu">run_global_ccr</span>(cluster_data)</span>
+<span id="cb122-67"><a href="#cb122-67" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(final_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>   cluster_id antibiotic_rate attendance_rate island      final_arm
@@ -3386,8 +3064,8 @@ Number of Groups: 26 </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb133"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Checks</span></span>
-<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Overall treatment counts:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Checks</span></span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Overall treatment counts:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3395,7 +3073,7 @@ Overall treatment counts:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb135"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(final_result<span class="sc">$</span>final_arm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(final_result<span class="sc">$</span>final_arm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3404,7 +3082,7 @@ Overall treatment counts:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance within each island (aim: approximate 1:1:1):</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance within each island (aim: approximate 1:1:1):</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3412,7 +3090,7 @@ Balance within each island (aim: approximate 1:1:1):</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb139"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(final_result<span class="sc">$</span>island, final_result<span class="sc">$</span>final_arm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(final_result<span class="sc">$</span>island, final_result<span class="sc">$</span>final_arm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        
@@ -3422,7 +3100,7 @@ Balance within each island (aim: approximate 1:1:1):</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb141"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance by mean antibiotic_rate by arm:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance by mean antibiotic_rate by arm:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3430,7 +3108,7 @@ Balance by mean antibiotic_rate by arm:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb143"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">tapply</span>(final_result<span class="sc">$</span>antibiotic_rate, final_result<span class="sc">$</span>final_arm, mean))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb134"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">tapply</span>(final_result<span class="sc">$</span>antibiotic_rate, final_result<span class="sc">$</span>final_arm, mean))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>       Control Intervention_A Intervention_B 
@@ -3438,7 +3116,7 @@ Balance by mean antibiotic_rate by arm:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb145"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance by mean attendance_rate by arm:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb136"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Balance by mean attendance_rate by arm:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3446,7 +3124,7 @@ Balance by mean attendance_rate by arm:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb147"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb147-1"><a href="#cb147-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">tapply</span>(final_result<span class="sc">$</span>attendance_rate, final_result<span class="sc">$</span>final_arm, mean))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb138"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">tapply</span>(final_result<span class="sc">$</span>attendance_rate, final_result<span class="sc">$</span>final_arm, mean))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>       Control Intervention_A Intervention_B 
@@ -3454,7 +3132,7 @@ Balance by mean attendance_rate by arm:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb149"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Standard deviations:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb140"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Standard deviations:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3462,34 +3140,34 @@ Standard deviations:</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb151"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb151-1"><a href="#cb151-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"antibiotic_rate SD:"</span>, <span class="fu">sd</span>(final_result<span class="sc">$</span>antibiotic_rate), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb142"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"antibiotic_rate SD:"</span>, <span class="fu">sd</span>(final_result<span class="sc">$</span>antibiotic_rate), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>antibiotic_rate SD: 0.146911 </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb153"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb153-1"><a href="#cb153-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"attendance_rate SD:"</span>, <span class="fu">sd</span>(final_result<span class="sc">$</span>attendance_rate), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb144"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"attendance_rate SD:"</span>, <span class="fu">sd</span>(final_result<span class="sc">$</span>attendance_rate), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>attendance_rate SD: 488.5173 </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb155"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a>island_table <span class="ot">&lt;-</span> <span class="fu">table</span>(final_result<span class="sc">$</span>final_arm, final_result<span class="sc">$</span>island)</span>
-<span id="cb155-2"><a href="#cb155-2" aria-hidden="true" tabindex="-1"></a>island_prop <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(island_table, <span class="at">margin =</span> <span class="dv">1</span>)</span>
-<span id="cb155-3"><a href="#cb155-3" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">7</span>, <span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>) <span class="sc">+</span> <span class="fl">0.1</span>)  <span class="co"># Increase bottom margin</span></span>
-<span id="cb155-4"><a href="#cb155-4" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(<span class="fu">t</span>(island_prop),</span>
-<span id="cb155-5"><a href="#cb155-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">beside =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb155-6"><a href="#cb155-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"tomato"</span>),</span>
-<span id="cb155-7"><a href="#cb155-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.text =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb155-8"><a href="#cb155-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">args.legend =</span> <span class="fu">list</span>(<span class="at">title =</span> <span class="st">"Island"</span>, <span class="at">x =</span> <span class="st">"bottom"</span>, <span class="at">horiz =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb155-9"><a href="#cb155-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">xlab =</span> <span class="st">"Arm"</span>, <span class="at">ylab =</span> <span class="st">"Proportion"</span>, <span class="at">main =</span> <span class="st">"Island distribution across arms"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb146"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a>island_table <span class="ot">&lt;-</span> <span class="fu">table</span>(final_result<span class="sc">$</span>final_arm, final_result<span class="sc">$</span>island)</span>
+<span id="cb146-2"><a href="#cb146-2" aria-hidden="true" tabindex="-1"></a>island_prop <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(island_table, <span class="at">margin =</span> <span class="dv">1</span>)</span>
+<span id="cb146-3"><a href="#cb146-3" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">7</span>, <span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>) <span class="sc">+</span> <span class="fl">0.1</span>)  <span class="co"># Increase bottom margin</span></span>
+<span id="cb146-4"><a href="#cb146-4" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(<span class="fu">t</span>(island_prop),</span>
+<span id="cb146-5"><a href="#cb146-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">beside =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb146-6"><a href="#cb146-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"tomato"</span>),</span>
+<span id="cb146-7"><a href="#cb146-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.text =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb146-8"><a href="#cb146-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">args.legend =</span> <span class="fu">list</span>(<span class="at">title =</span> <span class="st">"Island"</span>, <span class="at">x =</span> <span class="st">"bottom"</span>, <span class="at">horiz =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb146-9"><a href="#cb146-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">xlab =</span> <span class="st">"Arm"</span>, <span class="at">ylab =</span> <span class="st">"Proportion"</span>, <span class="at">main =</span> <span class="st">"Island distribution across arms"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="MOCA-DAWA_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>

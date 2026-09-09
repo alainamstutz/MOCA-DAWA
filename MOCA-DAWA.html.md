@@ -15,7 +15,7 @@ editor: visual
 
 # **DAWA cluster randomized trial (CRT)**
 
-> **Update - sample size revised based on under-5 pilot data.** Pilot data from the trial setting (ZanEMR, 31 facilities) give, for the under-5 population on which the sample size is based, a baseline antibiotic prescription proportion of **0.78** (95% CI 0.747-0.814) and an ICC of **0.048** (95% CI 0.023-0.077), substantially lower than the 0.20 previously assumed from mainland Tanzania. All calculations below use **ICC = 0.08** (rounding up the upper confidence bound) as the primary, conservative assumption, with sensitivity analyses across 0.02-0.10. The facility log-odds in the pilot are symmetric (skew +0.14, Shapiro-Wilk p = 0.32), so symmetric cluster effects are the primary planning assumption and the skewed (gamma) scenario is retained as a stress test.
+> **Update: sample size revised based on under-5 pilot data.** Pilot data from the trial setting (ZanEMR data) give, for the under-5 population on which the sample size is based, a baseline antibiotic prescription proportion of **0.78** (95% CI 0.747-0.814) and an ICC of **0.048** (95% CI 0.023-0.077), substantially lower than the ICC 0.20 as previously assumed from mainland Tanzania data. All calculations below use **ICC = 0.08** as the primary, conservative assumption, with sensitivity analyses across 0.02-0.10. The facility log-odds in the pilot data are symmetric, so symmetric cluster effects are the primary planning assumption and the skewed (gamma) scenario is retained as a sensitivity analysis.
 
 Interventions on the level of health care workers at health facilities (dispensaries) in Zanzibar to reduce antibiotic prescriptions. Multi-arm with 2 interventions:
 
@@ -508,11 +508,11 @@ cat("  Minimum detectable effect at 80% power:", round(mde * 100, 1), "pp\n")
 
 - The small-sample correction costs one to two extra clusters per arm at these cluster numbers (C vs I1: 9 -\> 10; C vs I2: 6 -\> 7), consistent with the usual rule of thumb of adding a cluster per arm below \~15 clusters per arm. All figures in chapter 1 below are small-sample corrected.
 
-- We nevertheless **retain the planned 13 clusters per arm (39 in total)**, for three reasons: (i) 39 clusters is within the feasibility/budget ceiling and was already planned; (ii) at 8-9 clusters per arm the small-sample behaviour of the analysis model (GLMM with df = clusters - cluster-level parameters) becomes unreliable, and the formula-based DEFF approach is known to under-estimate the required size in that range; (iii) the reserve buys robustness against the ICC being at the upper end of, or above, the pilot range, and (iv) detecting a lower delta instead is more realistic and still clinically meaningful.
+- We nevertheless **retain the planned 13 clusters per arm (39 in total)**, for several reasons: (i) 39 clusters is within the feasibility/budget ceiling and was already planned; (ii) at 8-9 clusters per arm the small-sample behaviour of the analysis model (GLMM with df = clusters - cluster-level parameters) becomes unreliable, and the formula-based DEFF approach is known to under-estimate the required size in that range; (iii) the reserve buys robustness against the ICC being at the upper end of, or above, the pilot range, and (iv) detecting a lower delta instead is more realistic and still clinically meaningful.
 
-- At 13 clusters per arm, ICC 0.08 and a 78% baseline, formula-based power is 91% for the 20 pp contrast and 98% for the 25 pp contrast, and the minimum detectable effect at 80% power is **16.8 pp**.
+- At 13 clusters per arm, ICC 0.08 and a 78% baseline, formula-based power is 91% for the 20 pp contrast and 98% for the 25 pp contrast, and the minimum detectable effect at 80% power is **17 pp**.
 
-- The simulations are somewhat less optimistic than the formula: under symmetric cluster effects the GLMM (SAP primary, unadjusted) gives 86% power at 20 pp and a minimum detectable effect of 19 pp. Powering on 20 pp therefore keeps adequate margin under both the formula and the simulation; 18 pp would not.
+- The simulations are somewhat less optimistic than the formula: under symmetric cluster effects the GLMM (SAP primary, unadjusted) gives 86% power at 20 pp and a minimum detectable effect of **19 pp**, but the adjustment will help also.
 
 ## **(1.1) Varying assumptions - Standard sample size calculation**
 
@@ -667,13 +667,13 @@ ggplot(results_df, aes(x = ICC, y = n_clusters_per_arm * 3)) +
 
 Varying the effect size: from 25 pp down to 15 pp.
 
-Keep the baseline prescription rate at 75% (control rate)
+Keep the baseline prescription rate at 78% (control rate)
 
 Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)
 
 Keep the CV at 0.1 (will not make any difference if CV = 0)
 
-Keep ICC at 0.10
+Keep ICC at 0.08
 
 Plot delta vs power.
 
@@ -748,7 +748,7 @@ ggplot(results_effect_df, aes(x = effect_size_pp, y = power)) +
 
 3-D plot, varying the effect size (25 pp to 15 pp) & varying ICC (0.02 to 0.10)
 
-Keep the baseline prescription rate at 75% (control rate)
+Keep the baseline prescription rate at 78% (control rate)
 
 Keep m (cluster size) at 40, to base it on the kids (will not make much difference if changed to m=150 for adults)
 
@@ -835,7 +835,7 @@ ggplot(results_3d, aes(x = effect_size_pp, y = ICC, fill = n_clusters_per_arm)) 
 
 Just a quick check - adding more participants per clusters does not really help
 
-Keeping it fix at the baseline scenario: 13 clusters per arm, 25 pp effect reduction, ICC 0.10
+Keeping it fix at the baseline scenario: 13 clusters per arm, 20 pp effect reduction, ICC 0.08
 
 
 ::: {.cell}
@@ -1772,23 +1772,23 @@ ggplot(df_power_css_glmm, aes(x = Cluster_ss, y = Power)) +
 
 ## **(2.5) Powering on a smaller effect: power vs. delta at the planned design**
 
-The 25 pp reduction assumed so far is optimistic. Now that the ICC is lower than originally thought, we can power for a lower, more realistic but still clincally meaningful delta, while keeping the planned design of **13 vs 13 clusters** for the main pairwise comparison.
+The 25 pp reduction assumed so far is optimistic. Now that the ICC is lower than originally thought, we can power for a lower, more realistic but still clinically meaningful delta, while keeping the planned design of **13 vs 13 clusters** for the main pairwise comparison.
 
-Everything is held fixed at the planned design - ICC 0.10 (proportion scale), 13 clusters per arm, mean cluster size 40, CV 0.1, control rate 75%, alpha 0.05 - and only the effect size varies, from 25 pp down to 10 pp. The horizontal line marks 80% power; where each curve crosses it is that method's minimum detectable effect.
+Everything is held fixed at the planned design - ICC 0.08 (proportion scale), 13 clusters per arm, mean cluster size 40, CV 0.1, control rate 78%, alpha 0.05 - and only the effect size varies, from 25 pp down to 10 pp. The horizontal line marks 80% power; where each curve crosses it is that method's minimum detectable effect.
 
 Five curves are shown, because they do not agree and the differences matter:
 
 - **Closed formula** (chapter 1, with the small-sample t correction).
 
-- **Simulation, cluster-level analysis, symmetric (normal) cluster effects.**
+- **Simulation, cluster-level analysis, symmetric (normal) cluster effects**
 
-- **Simulation, cluster-level analysis, skewed (gamma) cluster effects** - our conservative default.
+- **Simulation, cluster-level analysis, skewed (gamma) cluster effects**
 
 - **Simulation, GLMM, skewed cluster effects** (glmmPQL with reduced degrees of freedom)
 
-- **Simulation, GLMM, symmetric (normal) cluster effects** (glmmPQL with reduced degrees of freedom)
+- **Simulation, GLMM, symmetric (normal) cluster effects** (glmmPQL with reduced degrees of freedom) - our default
 
-All simulations are calibrated so that (a) the realised proportion-scale ICC really is 0.10 under the distribution used, and (b) the marginal (population-average) prevalences really are 75% and 75% minus delta, so that all five curves are answering the same question.
+All simulations are calibrated so that (a) the realised proportion-scale ICC really is 0.08 under the distribution used, and (b) the marginal (population-average) prevalences really are 78% and 78% minus delta, so that all five curves are answering the same question.
 
 Read the gap between the symmetric and the skewed curves as the cost of the distributional assumption, and the gap between the two skewed curves as the cost of the analysis method. The former is the larger open question for this trial.
 
@@ -2105,11 +2105,11 @@ skew -0.0076 1.4229  0.0019
 
 - Type I error is correctly calibrated at roughly 5% for all cluster-effect distributions and at both 26 and 16 clusters. The cluster-level t-test with the 0.5 continuity correction is valid in this regime, so the power estimates can be trusted.
 
-- Where the "skewed distribution" power penalty comes from: It is worth being precise about this, because it drives the results in chapter 2.5. Holding σ_b fixed and only changing the *shape* of u_j costs almost nothing. The entire penalty appears only once we insist that each distribution reproduce the *same proportion-scale ICC of 0.08*: the gamma then needs σ_b = 0.892 rather than 0.702, and power at a 20 pp effect falls from 0.888 to 0.760. The reason is that the gamma's long right tail pushes cluster probabilities up against the ceiling of 1 (the control rate is already 0.78), where they add little to Var(p_j); to hit a given proportion-scale ICC it therefore needs much more variance on the log-odds scale - which is precisely the scale the analysis works on. So the conservative gamma scenario is really a statement about how much log-odds heterogeneity is implied by an observed ICC of 0.08, not about skewness per se. The under-5 pilot shows symmetric facility log-odds (skew +0.14, Shapiro-Wilk p = 0.32), so the symmetric curves in chapter 2.5 are the primary planning basis and the gamma is retained as a stress test.
+- The "skewed distribution" power penalty: Holding σ_b fixed and only changing the *shape* of u_j costs almost nothing. The entire penalty appears only once we insist that each distribution reproduce the *same proportion-scale ICC of 0.08*: the gamma then needs σ_b = 0.892 rather than 0.702, and power at a 20 pp effect falls from 0.888 to 0.760. The reason is that the gamma's long right tail pushes cluster probabilities up against the ceiling of 1 (the control rate is already 0.78), where they add little to Var(p_j); to hit a given proportion-scale ICC it therefore needs much more variance on the log-odds scale - which is precisely the scale the analysis works on. So the conservative gamma scenario is really a statement about how much log-odds heterogeneity is implied by an observed ICC of 0.08, not about skewness per se. The under-5 pilot shows symmetric facility log-odds (skew +0.14, Shapiro-Wilk p = 0.32).
 
-- **The effect size is now specified on the marginal (population-average) scale**, matching what the closed formula in chapter 1 assumes and what "a 20 pp reduction in prescribing" means in the protocol. This was previously wrong and was the single largest source of disagreement between chapters 1 and 2: setting `beta0 = qlogis(p0)` and `beta1 = log(OR)` makes 0.78 and 0.58 the *cluster-specific* probabilities (those of a cluster with u_j = 0), and averaging over u_j pulls both toward 0.5, so the nominal 20 pp actually generated a marginal 0.759 -\> 0.572, i.e. only **18.7 pp**. `calibrate_marginal()` now solves for both coefficients so the marginal prevalences are exactly p0 and p1.
+- The effect size is specified on the marginal (population-average) scale, matching what the closed formula in chapter 1 assumes and what "a 20 pp reduction in prescribing" (see protocol).
 
-- Under symmetry the closed form and the simulation now agree closely once both are asked for the same marginal effect. Type I error is unchanged at \~0.05 after calibration, confirming the extra power is real and not an artefact of a broken test.
+- Under symmetry the closed form and the simulation agree quite closely.
 
 # **(3) Simulate the full dataset and implement the main analysis strategy**
 
@@ -3097,357 +3097,9 @@ summary(results[,c("OR_unadj","OR_unadj_lower","OR_unadj_upper",
 
 # **(4) Stratified randomization algorithm**
 
-## **(4.1) Minimization**
+## **(4.1) Covariate-constrained randomization**
 
-Following the method proposed in \[Xiao L, Yank V, Ma J. Algorithm for balancing both continuous and categorical covariates in randomized controlled trials. *Comput Methods Programs Biomed*. 2012;108(3):1185-1190. doi:10.1016/j.cmpb.2012.06.001\](<https://pubmed.ncbi.nlm.nih.gov/22727633/>)
-
-They propose a modified symmetric Kullback–Leibler divergence (KLD) method to balance multi-arm trials. Works the same for a CRT if cluster-level covariates. The KLD method tries to balance both arm sizes and covariates dynamically (and prospectively) as clusters are assigned, but we can also use it with (a) fixed time-point of randomization and (b) fixed arm size (e.g. 13:13:13), by setting Dn = 1 and p_Dn = 1. Enforcing such tight group-size balance while still allow minimization on covariates. In other words, it removes randomness in group totals but keeps balance across covariates =\> stratified randomization.
-
-This has two disadvantages:
-
-1.  Randomization becomes more predictable (esp. towards the end of allocation)
-2.  Strict equal group sizes may slightly reduce the algorithm’s ability to optimize covariate balance, because sometimes the “best” assignment for covariates would tip the arm sizes temporarily, esp. in case of small number of clusters.
-
-Number (1) is not a problem in our case since we randomize all at once. Number (2) is the best we can get.
-
-The method works as follows: For the (n+1)th cluster: compute the “amount of imbalance” (using KLD imbalance score) assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value. They recommend: Pk = c(0.8, 0.1, 0.1): the covariate-balance biased-coin probabilities. 80% chance of choosing the arm with the smallest imbalance, 10% chance for the second-smallest, 10% chance for the worst. If all three arms tie, then average all slots (0.8+0.1+0.1)/3 = 0.333 (simple randomization)
-
-Dn: maximum tolerated size imbalance before intervening
-
-p_Dn: probability of forcing assignment to the smallest group once that imbalance is exceeded
-
-- if any arm is ahead by ≥1 cluster, the next cluster is forced to the smallest arm. The “numbers-balance” rule (Sec. 2.3); they introduce p_Dn to reduce predictability vs. setting it to 1, but allow either.
-
-The first 2 sequences (here 6 clusters) are allocated as a permuted block - two per arm - before using minimization. This ensures early variance estimates exist for the KLD and mirrors the recommended start.
-
-The symmetric-KLD part assumes approximate normality for continuous covariates (but they note high robustness even in case of violation)
-
-We demonstrate it on a hypothetical allocation dataset, but will eventually feed the same code with the real allocation dataset.
-
-Structure of allocation dataset:
-
-1.  cluster_id: 1-39
-2.  antibiotic_rate
-    - Definition: Patients receiving an antibiotic prescription among all presenting at the participating cluster. Mean over past year?
-
-    - Proportion, ranging from 0.44-0.87
-3.  attendance_rate
-    - All patients presenting at the participating cluster, per month, mean over past year
-
-    - Absolute count, ranging from 200-2000
-4.  island
-    - Pemba vs Unguja
-    - 30:70
-5.  arm: allocation 1-3
-
-
-::: {.cell}
-
-```{.r .cell-code}
-set.seed(20250820)
-
-# create hypothetical allocation dataset
-n_clusters <- 39
-cluster_data <- data.frame(
-  cluster_id = 1:n_clusters,
-  antibiotic_rate = runif(n_clusters, 0.44, 0.87),
-  attendance_rate = sample(200:2000, n_clusters, TRUE),
-  island = factor(ifelse(rbinom(n_clusters, 1, prob = 0.3) == 1, "Pemba", "Unguja"))
-)
-print(cluster_data)
-```
-
-::: {.cell-output .cell-output-stdout}
-
-```
-   cluster_id antibiotic_rate attendance_rate island
-1           1       0.8175535             389 Unguja
-2           2       0.4593160             652 Unguja
-3           3       0.8621713             372 Unguja
-4           4       0.7707444             604  Pemba
-5           5       0.4551056            1254  Pemba
-6           6       0.6258714             329 Unguja
-7           7       0.6704471            1587 Unguja
-8           8       0.4909854            1300 Unguja
-9           9       0.4857333            1092 Unguja
-10         10       0.8505579             615 Unguja
-11         11       0.6766742             827  Pemba
-12         12       0.4758405            1220  Pemba
-13         13       0.4410584             220 Unguja
-14         14       0.7559218            1209  Pemba
-15         15       0.4635024             546 Unguja
-16         16       0.5350358             351 Unguja
-17         17       0.8120696            1227  Pemba
-18         18       0.7226116             902 Unguja
-19         19       0.5457951            1321 Unguja
-20         20       0.6043556            1405 Unguja
-21         21       0.4889210             561 Unguja
-22         22       0.7520059            1124  Pemba
-23         23       0.8496349            1692  Pemba
-24         24       0.5743991            1941 Unguja
-25         25       0.5006325            1005 Unguja
-26         26       0.8609247            1735  Pemba
-27         27       0.8012171            1581 Unguja
-28         28       0.5604527            1544 Unguja
-29         29       0.8319907            1630 Unguja
-30         30       0.4641657            1164  Pemba
-31         31       0.5750356            1382 Unguja
-32         32       0.8478091            1822 Unguja
-33         33       0.7960053             683 Unguja
-34         34       0.4691478            1317  Pemba
-35         35       0.5454399             463 Unguja
-36         36       0.7230553            1044 Unguja
-37         37       0.7860256             968  Pemba
-38         38       0.7082810            1777 Unguja
-39         39       0.6951461             469 Unguja
-```
-
-
-:::
-
-```{.r .cell-code}
-# Parameters for minimization
-n_arms <- 3
-Dn <- 1
-p_Dn <- 1
-Pk <- c(0.8, 0.1, 0.1)
-
-## Symmetric KLD for continuous covariates
-# the mean-difference term scaled by inverse variances plus a variance-term, summed over covariates, with the 0.5 factor (Eq. (1), continuous part). A tiny eps stabilizes near-zero variances.
-symKLD_cont <- function(Xi, Xj, eps = 1e-8) {
-  # Xi, Xj : matrices with columns = continuous covariates
-  mu_i <- colMeans(Xi)
-  mu_j <- colMeans(Xj)
-  v_i  <- apply(Xi, 2, var)
-  v_j  <- apply(Xj, 2, var)
-  # stabilize in case of near-constant covariate within an arm
-  v_i  <- pmax(v_i, eps)
-  v_j  <- pmax(v_j, eps)
-  term_mu  <- ((mu_i - mu_j)^2) * (1 / v_i + 1 / v_j)
-  term_var <- (v_i + v_j) * (1 / v_i + 1 / v_j) - 2
-  # 0.5 * sum over covariates
-  0.5 * sum(term_mu + term_var)
-}
-
-## Symmetric KLD for categorical variables
-symKLD_cat <- function(fac_i, fac_j, eps = 1e-8) {
-  cats <- levels(factor(c(fac_i, fac_j)))
-  p_i <- prop.table(table(factor(fac_i, levels = cats)))
-  p_j <- prop.table(table(factor(fac_j, levels = cats)))
-  p_i <- pmax(p_i, eps)
-  p_j <- pmax(p_j, eps)
-  0.5 * (sum(p_i * log(p_i / p_j)) + sum(p_j * log(p_j / p_i)))
-}
-
-## Combined imbalance measure
-symKLD_mixed <- function(Xi, Xj, cont_vars = character(0), cat_vars = character(0)) {
-  D <- 0
-  if (length(cont_vars) > 0) {
-    D <- D + symKLD_cont(Xi[, cont_vars, drop = FALSE],
-                         Xj[, cont_vars, drop = FALSE])
-  }
-  if (length(cat_vars) > 0) {
-    for (v in cat_vars) {
-      D <- D + symKLD_cat(Xi[[v]], Xj[[v]])
-    }
-  }
-  D
-}
-
-## Total imbalance function using mixed covariates
-## Multi-arm extension and “what-if” evaluation (Sec. 2.1–2.4)
-# For the (n+1)th cluster: compute the “amount of imbalance” assuming the cluster is assigned to each arm in turn, then bias toward the arm(s) with the smallest value (Algorithm Step 4; di construction extended to T > 2 arms). The function pretends to assign the cluster to arm g and sums the pairwise KLDs across all unordered arm pairs under that hypothetical allocation. Terms not affected by the placement cancel in comparisons, so minimizing this total is equivalent to minimizing the paper’s di ranking.
-total_imbalance_if <- function(alloc, data, idx, g, n_arms,
-                               cont_vars = character(0), cat_vars = character(0)) {
-  tmp <- alloc
-  tmp[idx] <- g
-  arm_X <- lapply(1:n_arms, function(a) data[tmp == a, , drop = FALSE])
-  D <- 0
-  for (i in 1:(n_arms - 1)) {
-    for (j in (i + 1):n_arms) {
-      if (nrow(arm_X[[i]]) >= 2 && nrow(arm_X[[j]]) >= 2) {
-        D <- D + symKLD_mixed(arm_X[[i]], arm_X[[j]],
-                              cont_vars, cat_vars)
-      } else {
-        D <- D + 1e6  # small penalty if too few per arm
-      }
-    }
-  }
-  D
-}
-
-## convert imbalance vector d_i to assignment probabilities with proper tie-averaging
-# smaller di ⇒ larger probability; if multiple arms tie, average the corresponding P_k positions so tied arms receive the same probability (Sec. 2.2). Normalizing ensures a proper probability vector.
-probs_from_di <- function(di, Pk) {
-  K <- length(di)
-  o <- order(di)# ranks by increasing imbalance
-  probs <- numeric(K)
-  pos <- 1
-  for (tie in split(o, di[o])) {
-    k <- length(tie)
-    # slots for this tie = pos...(pos+k-1)
-    probs[tie] <- mean(Pk[pos:(pos + k - 1)])
-    pos <- pos + k
-  }
-  # normalize, just in case rounding makes probs not sum exactly to 1
-  probs / sum(probs)
-}
-
-## main randomization
-alloc <- rep(NA, n_clusters)
-
-## Start with permuted block (first 2T = 6 clusters: 2 per arm)
-init_ids <- sample(1:n_clusters, 2 * n_arms)
-alloc[init_ids] <- rep(1:n_arms, each=2)
-
-## MAIN LOOP
-cont_vars <- c("antibiotic_rate", "attendance_rate")
-cat_vars  <- c("island")  # your new binary covariate
-
-# Remaining clusters to allocate
-remaining <- setdiff(1:n_clusters, which(!is.na(alloc)))
-
-for (cl in remaining) {
-  # current group-size imbalance (ignore NA entries)
-  group_sizes <- tabulate(alloc[!is.na(alloc)], nbins = n_arms)
-  # group_sizes <- tabulate(factor(alloc, levels = 1:n_arms), nbins = n_arms)
-  max_diff <- max(group_sizes) - min(group_sizes)
-
-  if (max_diff >= Dn) {
-    min_group <- which.min(group_sizes)
-    if (runif(1) < p_Dn) {
-      alloc[cl] <- min_group
-      next
-    }
-  }
-
-  # Compute D_i (hypothetical imbalances) for assigning this cluster to each arm
-  di <- sapply(1:n_arms, function(g)
-  total_imbalance_if(alloc, cluster_data, cl, g, n_arms,
-                     cont_vars, cat_vars))
-
-  # Translate to assignment probabilities with tie-averaging -> Pk probabilities
-  prob_vec <- probs_from_di(di, Pk)
-
-  # Safety fallback
-  # If for some reason prob_vec is invalid (all zeros, or has NA), then the algorithm falls back to equal randomization (1/3 each)
-  if (all(prob_vec == 0) || any(is.na(prob_vec))) {
-    prob_vec <- rep(1/n_arms, n_arms)
-  }
-
-  # Assign cluster using these probabilities
-  # This is the actual biased-coin randomization step; chooses one of the arms 1, 2, 3, according to prob_vec
-  alloc[cl] <- sample.int(n_arms, size = 1, prob = prob_vec)
-
-}
-
-# attach allocation
-cluster_data$arm <- alloc
-
-# quick sanity check
-print(cluster_data)
-```
-
-::: {.cell-output .cell-output-stdout}
-
-```
-   cluster_id antibiotic_rate attendance_rate island arm
-1           1       0.8175535             389 Unguja   2
-2           2       0.4593160             652 Unguja   1
-3           3       0.8621713             372 Unguja   3
-4           4       0.7707444             604  Pemba   1
-5           5       0.4551056            1254  Pemba   2
-6           6       0.6258714             329 Unguja   3
-7           7       0.6704471            1587 Unguja   2
-8           8       0.4909854            1300 Unguja   1
-9           9       0.4857333            1092 Unguja   3
-10         10       0.8505579             615 Unguja   2
-11         11       0.6766742             827  Pemba   2
-12         12       0.4758405            1220  Pemba   1
-13         13       0.4410584             220 Unguja   3
-14         14       0.7559218            1209  Pemba   1
-15         15       0.4635024             546 Unguja   3
-16         16       0.5350358             351 Unguja   1
-17         17       0.8120696            1227  Pemba   3
-18         18       0.7226116             902 Unguja   2
-19         19       0.5457951            1321 Unguja   1
-20         20       0.6043556            1405 Unguja   2
-21         21       0.4889210             561 Unguja   2
-22         22       0.7520059            1124  Pemba   3
-23         23       0.8496349            1692  Pemba   2
-24         24       0.5743991            1941 Unguja   3
-25         25       0.5006325            1005 Unguja   1
-26         26       0.8609247            1735  Pemba   1
-27         27       0.8012171            1581 Unguja   3
-28         28       0.5604527            1544 Unguja   1
-29         29       0.8319907            1630 Unguja   2
-30         30       0.4641657            1164  Pemba   3
-31         31       0.5750356            1382 Unguja   1
-32         32       0.8478091            1822 Unguja   2
-33         33       0.7960053             683 Unguja   3
-34         34       0.4691478            1317  Pemba   3
-35         35       0.5454399             463 Unguja   1
-36         36       0.7230553            1044 Unguja   2
-37         37       0.7860256             968  Pemba   2
-38         38       0.7082810            1777 Unguja   1
-39         39       0.6951461             469 Unguja   3
-```
-
-
-:::
-
-```{.r .cell-code}
-print(table(cluster_data$arm))
-```
-
-::: {.cell-output .cell-output-stdout}
-
-```
-
- 1  2  3 
-13 13 13 
-```
-
-
-:::
-
-```{.r .cell-code}
-print(aggregate(cluster_data[, c("antibiotic_rate", "attendance_rate")],
-                by = list(arm = cluster_data$arm), mean))
-```
-
-::: {.cell-output .cell-output-stdout}
-
-```
-  arm antibiotic_rate attendance_rate
-1   1       0.5988004       1120.2308
-2   2       0.7172879       1130.4615
-3   3       0.6340379        928.0769
-```
-
-
-:::
-
-```{.r .cell-code}
-island_table <- table(cluster_data$arm, cluster_data$island)
-island_prop <- prop.table(island_table, margin = 1)
-barplot(t(island_prop),
-        beside = TRUE,
-        col = c("steelblue", "tomato"),
-        legend.text = TRUE,
-        args.legend = list(title = "Island", x = "topright"),
-        xlab = "Arm", ylab = "Proportion", main = "Island distribution across arms")
-```
-
-::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png){width=672}
-:::
-:::
-
-
-## **(4.2) Covariate-constrained randomization**
-
-If we use batch-randomization (all clusters randomized at once and no new clusters entering later), the probably simple covariate-constrained randomization to be used: <https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/>
+If we use batch-randomization (all clusters randomized at once and no new clusters entering later), a simple covariate-constrained randomization is preferred: <https://rethinkingclinicaltrials.org/chapters/design/experimental-designs-and-randomization-schemes/covariate-constrained-randomization/>
 
 - Exact 1:1:1 overall allocation:
 
@@ -3835,6 +3487,7 @@ barplot(t(island_prop),
 ```
 
 ::: {.cell-output-display}
-![](MOCA-DAWA_files/figure-html/unnamed-chunk-33-1.png){width=672}
+![](MOCA-DAWA_files/figure-html/unnamed-chunk-32-1.png){width=672}
 :::
 :::
+
